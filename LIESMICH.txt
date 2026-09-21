@@ -1,0 +1,59 @@
+KOZ Security — Website (4 Dateien, alles eingebettet)
+=====================================================
+
+Dateien
+-------
+index.html          Startseite mit den Live-Grafiken
+gap-analyse.html    Unterseite Gap-Analyse
+impressum.html      Impressum — Platzhalter in [eckigen Klammern] ausfuellen
+datenschutz.html    Datenschutzerklaerung — Platzhalter ausfuellen
+
+Jede Datei ist vollstaendig in sich geschlossen: Gestaltung, Skripte,
+Animationen und Logo stecken im HTML. Es gibt keine styles.css, keine
+live.js, keine SVG-Dateien mehr. Eine Datei kann einzeln verschoben oder
+kopiert werden, ohne dass etwas verloren geht.
+
+Hochladen bei IONOS
+-------------------
+1. Im IONOS-Kundenkonto unter "Hosting" den Webspace oeffnen, dann
+   "Datei-Manager" (oder per SFTP verbinden).
+2. Alle vier Dateien in das Wurzelverzeichnis legen, ueblich ist
+   htdocs/ oder public_html/ — alle vier nebeneinander, nicht in
+   Unterordner.
+3. Eine eventuell vorhandene index.html von IONOS ueberschreiben.
+4. Unter "SSL" das kostenlose Zertifikat fuer die Domain aktivieren.
+5. Domain aufrufen: es erscheint index.html.
+
+Vor dem Livegang ausfuellen
+---------------------------
+- impressum.html: alle Angaben in [eckigen Klammern] — Firmenname mit
+  Rechtsform, Anschrift, Registereintrag und USt-IdNr., sofern vorhanden.
+  Ein unvollstaendiges Impressum ist angreifbar.
+- datenschutz.html: Anschrift, Speicherdauer der Logfiles (IONOS nennt
+  sie im Kundenkonto), zustaendige Landesdatenschutzbehoerde, Datum.
+- Kontaktformular: index.html enthaelt
+
+      <form id="koz-form" action="ENDPUNKT-HIER-EINTRAGEN" method="post" ...>
+
+  Solange dort ENDPUNKT-HIER-EINTRAGEN steht, wird nichts verschickt, es
+  erscheint nur die Bestaetigung im Formular. Sobald Sie den Platzhalter
+  durch eine echte Adresse ersetzen — etwa Ihren Formspree-Endpunkt oder
+  das Formmailer-Skript von IONOS — sendet das Formular normal ab. Wird
+  ein Dienst mit Sitz ausserhalb der EU genutzt, muss er in der
+  Datenschutzerklaerung ergaenzt werden.
+
+Hinweise
+--------
+- Schrift und Symbole: die Schrift Inter kommt von Google Fonts, die
+  Symbole (Phosphor Icons) von unpkg.com. Beides ist in der
+  Datenschutzerklaerung unter Punkt 5 beschrieben. Wer ganz ohne
+  Drittanbieter auskommen will, laedt beide Dateien herunter, legt sie
+  neben die HTML-Dateien und ersetzt die beiden Links im Kopf jeder
+  Datei durch eigene @font-face-Regeln.
+- Statistik oder Cookies: aktuell ist keine im Einsatz, deshalb ist kein
+  Cookie-Banner notwendig. Sobald etwas hinzukommt, braucht die Seite ein
+  Einwilligungsbanner und die Datenschutzerklaerung eine Ergaenzung.
+- Die Zahlen in der FAIR-Kurve und der Ampel-Matrix sind Beispielwerte
+  zur Veranschaulichung, keine Kundendaten.
+- Impressum und Datenschutzerklaerung sind Vorlagen nach dem ueblichen
+  Aufbau, keine Rechtsberatung. Bitte vor dem Livegang pruefen lassen.
