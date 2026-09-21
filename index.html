@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KOZ IT-Security — Informationssicherheit für kleine und mittelständische Unternehmen</title>
+<link rel="canonical" href="https://www.koz-itsecurity.com/">
+<meta name="description" content="Gap-Analyse nach VdS 10100, Cyber-Risiko-Quantifizierung nach FAIR, VMware→Proxmox-Migration und laufende Betreuung.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<style>
+/* Nocturne — design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
+
+:root {
+  --color-bg: #161826;
+  --color-surface: #232532;
+  --color-text: #e9e9ed;
+  --color-accent: #9184d9; /* review round 7 (Barron): the accent moves to
+     the product's blurple — OKLCH hue 289.2, the hue of the app's own Pro
+     accent (#9a8fe0, --om-accent-pro) — at the same lightness the steel
+     accent held (L 0.660, so the documented ratios survive) and chroma
+     in the product blurple's own range (its token sits at C 0.118; the
+     accent takes 0.125, from the old steel's 0.030):
+     the accent now reads as an accent rather than another neutral. */
+  --color-accent-2: #a7a1db; /* the machine-derived stand-in follows: same
+     hue, same L 0.734, chroma at the same 2:3 proportion it held */
+  --color-divider: color-mix(in srgb, #e9e9ed 16%, transparent);
+
+  /* Tonal ramps — generated in OKLCH on one shared lightness scale, so the
+     same step of any role matches the others in visual value. */
+  --color-neutral-100: #f3f5fe;
+  --color-neutral-200: #e4e7f5;
+  --color-neutral-300: #cfd3e5;
+  --color-neutral-400: #b2b6ca;
+  --color-neutral-500: #9397ab;
+  --color-neutral-600: #75798c;
+  --color-neutral-700: #595d6c;
+  --color-neutral-800: #3f424d;
+  --color-neutral-900: #292b31;
+
+  --color-accent-100: #f5f4ff;
+  --color-accent-200: #e7e5fe;
+  --color-accent-300: #d2cefd;
+  --color-accent-400: #b5abfc;
+  --color-accent-500: #968ae0;
+  --color-accent-600: #796cbf;
+  --color-accent-700: #5d5294;
+  --color-accent-800: #423a6a;
+  --color-accent-900: #2b2741;
+
+  --color-accent-2-100: #f5f4ff;
+  --color-accent-2-200: #e7e5fe;
+  --color-accent-2-300: #d2cefd;
+  --color-accent-2-400: #b5afe8;
+  --color-accent-2-500: #9690c9;
+  --color-accent-2-600: #7972a9;
+  --color-accent-2-700: #5c5783;
+  --color-accent-2-800: #423e5d;
+  --color-accent-2-900: #2b293a;
+
+  /* Deck section-divider ground — review round 3: saturation as presence.
+     Dividers take a saturated deep indigo (hue 277, the neutral ramp's own
+     family; C 0.094 — written when the accent held C 0.030, before the
+     round-7 blurple raised it past the ground's) with a lighter bloom and
+     a ghost tint of the same hue, while the slide grounds stay
+     desaturated. Deck-scale fills only — not interface colors. */
+  --color-section: #262a60;
+  --color-section-glow: #353b80;
+  --color-section-ghost: #4c5397;
+
+  --font-heading: "Inter", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-heading-weight: 500;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --space-1: 2.8px;
+  --space-2: 5.6px;
+  --space-3: 8.4px;
+  --space-4: 11.2px;
+  --space-6: 16.8px;
+  --space-8: 22.4px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* Elevation — derived from the ground: soft ink-tinted shadows on a
+     light theme, a hairline edge + ambient darkness on a dark one. */
+  --shadow-sm: 0 0 0 1px #3f424d;
+  --shadow-md: 0 0 0 1px #595d6c, 0 6px 18px rgba(0,0,0,0.55);
+  --shadow-lg: 0 0 0 1px #9397ab, 0 16px 40px rgba(0,0,0,0.65);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
+
+.lighten{mix-blend-mode:lighten;background-color:transparent}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Components — built with the tokens above. Plain CSS
+   on plain HTML: no JavaScript, no build step. Each class is documented in
+   readme.md and demonstrated in foundations/ and components/.
+   ══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2);
+}
+h1 { font-size: 42px; }
+h2 { font-size: 32px; }
+h3 { font-size: 25px; }
+h4 { font-size: 20px; }
+h5 { font-size: 16px; }
+h6 { font-size: 13px; }
+h6 { letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+figure { margin: 0; }
+figcaption {
+  font-size: 11px; margin-top: var(--space-1);
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+/* — rules — */
+/* Rules fade to transparent at both ends instead of stopping cleanly — a
+   Nocturne signature. The ramp is 48px an end (one deck baseline unit),
+   painted from the same divider token. Freestanding rules fade; box
+   outlines, in-control separators, and short accent marks stay solid. */
+.hr {
+  height: 1px; border: 0; margin: var(--space-4) 0;
+  background: linear-gradient(to right,
+    transparent, var(--color-divider) 48px,
+    var(--color-divider) calc(100% - 48px), transparent);
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text); /* matches the .input's 14px —
+     the pair sits side by side in sign-up rows */
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { color: var(--color-accent); border-color: var(--color-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.btn-primary:active { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-block { width: 100%; margin-top: var(--space-2); }
+
+/* — forms — */
+.field > label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+textarea.input { min-height: 90px; resize: vertical; }
+.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.radio input, .seg-opt input {
+  position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+.radio .dot {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 1.5px solid var(--color-divider);
+}
+.radio:hover .dot { border-color: var(--color-accent); }
+.radio input:checked + .dot {
+  border-color: var(--color-accent); background: var(--color-accent);
+  box-shadow: inset 0 0 0 4px var(--color-bg);
+}
+.radio input:focus-visible + .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.seg {
+  display: inline-flex; overflow: hidden;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+/* — cards — */
+.card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface);
+}
+.card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+.card-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 17px; line-height: 1.2;
+}
+.card-body { margin: 0; font-size: 13px; opacity: 0.8; flex: 1; }
+.card-meta {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+}
+.tag-accent { background: var(--color-accent-800); color: var(--color-accent-100); }
+.tag-accent-2 { background: var(--color-accent-2-800); color: var(--color-accent-2-100); }
+.tag-neutral { background: var(--color-neutral-800); color: var(--color-neutral-100); }
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+
+/* — navigation — */
+.nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: none;
+}
+.nav-brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 18px; margin-right: auto;
+}
+.nav a { color: inherit; text-decoration: none; font-size: 14px; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+
+/* — tables — */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: var(--space-2); border-bottom: 1px solid transparent; /* keeps layout; the row paints the fading rule */
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid transparent;
+}
+/* Row rules as row-level strips so the end-fade spans the row, not each cell. */
+.table thead tr {
+  background: linear-gradient(to right,
+    transparent, var(--color-divider) 48px,
+    var(--color-divider) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+.table tbody tr {
+  background: linear-gradient(to right,
+    transparent, color-mix(in srgb, var(--color-text) 8%, transparent) 48px,
+    color-mix(in srgb, var(--color-text) 8%, transparent) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+.table tbody tr:hover {
+  /* the hover tint layers over the row rule, which keeps painting */
+  background:
+    linear-gradient(color-mix(in srgb, var(--color-text) 4%, transparent),
+                    color-mix(in srgb, var(--color-text) 4%, transparent)) no-repeat 0 0 / 100% 100%,
+    linear-gradient(to right,
+      transparent, color-mix(in srgb, var(--color-text) 8%, transparent) 48px,
+      color-mix(in srgb, var(--color-text) 8%, transparent) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+
+/* — dialog — */
+.dialog-backdrop {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+.dialog {
+  width: min(440px, 100%); display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  background: var(--color-surface); box-shadow: var(--shadow-lg);
+}
+.dialog-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 20px;
+}
+.dialog-body { font-size: 14px; opacity: 0.85; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NC4wMCA2NC4wMCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IktPWiBJVC1TZWN1cml0eSBCaWxkbWFya2UiIHhtbG5zOmMycGE9Imh0dHA6Ly9jMnBhLm9yZy9tYW5pZmVzdCI+PHRpdGxlPktPWiBJVC1TZWN1cml0eSBCaWxkbWFya2U8L3RpdGxlPjxwYXRoIGQ9Ik02IDggSDU4IFYxOSBMMjQgNDUgSDU4IFY1NiBINiBWNDUgTDQwIDE5IEg2IFoiIGZpbGw9IiNGM0Y1RkUiPjwvcGF0aD48L3N2Zz4=" type="image/svg+xml">
+<style>
+:root{
+--page:1120px;
+--pad:clamp(20px,5vw,56px);
+--sec:clamp(56px,7.5vw,116px);
+--rule:linear-gradient(to right,transparent,var(--color-divider) 48px,var(--color-divider) calc(100% - 48px),transparent);
+--rule-soft:linear-gradient(to right,transparent,color-mix(in srgb,var(--color-text) 8%,transparent) 48px,color-mix(in srgb,var(--color-text) 8%,transparent) calc(100% - 48px),transparent);
+}
+html{scroll-behavior:smooth;background:var(--color-bg);-webkit-text-size-adjust:100%}
+body{font-size:16px;text-wrap:pretty;overflow-x:hidden}
+canvas{display:block}
+ul{margin:0;padding:0;list-style:none}
+a{text-decoration:none}
+a.link{color:var(--color-accent-300);border-bottom:1px solid color-mix(in srgb,var(--color-accent) 40%,transparent);transition:color .18s,border-color .18s}
+a.link:hover{color:var(--color-accent-200);border-bottom-color:var(--color-accent)}
+.wrap{max-width:var(--page);margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
+.sec{padding-top:var(--sec);padding-bottom:var(--sec)}
+.rule{height:1px;border:0;margin:0;background:var(--rule)}
+.eyebrow{font-family:var(--font-heading);font-size:12px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent);display:flex;align-items:center;gap:var(--space-3)}
+.eyebrow:before{content:"";width:26px;height:1px;background:var(--color-accent);flex:none}
+.h-xl{font-size:clamp(38px,6.2vw,74px);line-height:1.02;letter-spacing:-.028em;margin:0}
+.h-lg{font-size:clamp(28px,3.6vw,44px);line-height:1.08;letter-spacing:-.022em;margin:0}
+.h-md{font-size:clamp(20px,2vw,25px);line-height:1.16;letter-spacing:-.016em;margin:0}
+.lead{font-size:clamp(17px,1.45vw,20px);line-height:1.58;margin:0;color:color-mix(in srgb,var(--color-text) 82%,transparent)}
+.body{font-size:16px;line-height:1.62;margin:0}
+.dim{color:color-mix(in srgb,var(--color-text) 58%,transparent)}
+.panel{background:var(--color-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
+.lift{transition:box-shadow .22s,transform .22s,background .22s}
+.lift:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.navlink{color:color-mix(in srgb,var(--color-text) 78%,transparent);font-family:var(--font-heading);font-weight:500;font-size:14.5px;padding:var(--space-2) 0;position:relative;transition:color .18s}
+.navlink:after{content:"";position:absolute;left:0;right:100%;bottom:0;height:1px;background:var(--color-accent);transition:right .24s cubic-bezier(.22,.61,.36,1)}
+.navlink:hover{color:var(--color-text)}
+.navlink:hover:after,.navlink[aria-current=page]:after{right:0}
+.btn{padding:calc(var(--space-3) * 1.15) calc(var(--space-6) * 1.05);font-size:15px;transition:background .18s,border-color .18s,color .18s,box-shadow .18s}
+.btn-primary:hover{box-shadow:0 0 0 4px color-mix(in srgb,var(--color-accent) 12%,transparent)}
+.btn-lg{padding:calc(var(--space-4) * 1.2) calc(var(--space-8) * 1.1);font-size:16px}
+.ico{font-size:20px;line-height:1;color:var(--color-accent);flex:none}
+.rowlist>li{display:flex;gap:var(--space-6);align-items:baseline;padding:calc(var(--space-4) * 1.25) 0;background:var(--rule-soft) no-repeat bottom/100% 1px}
+.rowlist>li:last-child{background:none}
+.num{font-family:var(--font-heading);font-size:13px;font-weight:500;letter-spacing:.1em;color:var(--color-accent);flex:none;min-width:30px;padding-top:4px}
+.input{min-height:44px;padding:11px 13px;font-size:15px;transition:border-color .18s,background .18s}
+.input:focus-visible{background:color-mix(in srgb,var(--color-accent) 7%,transparent)}
+.field>label{font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.table td,.table th{padding:calc(var(--space-4) * 1.1) var(--space-6) calc(var(--space-4) * 1.1) 0}
+.table{font-size:15px}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.22,.61,.36,1),transform .8s cubic-bezier(.22,.61,.36,1)}
+.rv.in{opacity:1;transform:none}
+@keyframes kozPop{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+.prose{max-width:72ch}
+.prose h2{font-size:clamp(20px,2.1vw,26px);margin:calc(var(--space-8) * 2.2) 0 var(--space-4)}
+.prose h2:first-child{margin-top:0}
+.prose p{margin:0 0 var(--space-4);font-size:16px;line-height:1.66}
+.prose li{position:relative;padding-left:22px;margin-bottom:var(--space-3);line-height:1.6}
+.prose li:before{content:"";position:absolute;left:0;top:.68em;width:9px;height:1px;background:var(--color-accent)}
+.prose ul{margin:0 0 var(--space-6)}
+.ph-ph{color:var(--color-accent-300);background:color-mix(in srgb,var(--color-accent) 12%,transparent);padding:1px 7px;border-radius:var(--radius-sm);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--color-accent) 45%,transparent)}
+</style>
+<script>
+(function(){
+  var V=function(n,f){try{return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||f}catch(e){return f}};
+  var cl=function(v){return v<0?0:v>1?1:v};
+  var reduced=function(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
+  function rgba(hex,a){var s=String(hex).replace('#','').trim();var n=s.length===3?s.split('').map(function(c){return c+c}).join(''):s.slice(0,6);var v=parseInt(n,16)||0;return 'rgba('+((v>>16)&255)+','+((v>>8)&255)+','+(v&255)+','+a+')'}
+  var FADE=48;
+  function fade(ctx,x0,y0,x1,y1,hex,a){
+    var len=Math.hypot(x1-x0,y1-y0)||1,f=Math.min(.45,FADE/len);
+    var g=ctx.createLinearGradient(x0,y0,x1,y1);
+    g.addColorStop(0,rgba(hex,0));g.addColorStop(f,rgba(hex,a));
+    g.addColorStop(1-f,rgba(hex,a));g.addColorStop(1,rgba(hex,0));
+    ctx.strokeStyle=g;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+  }
+  function segs(p){var o=[],t=0;for(var i=1;i<p.length;i++){var d=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);o.push(d);t+=d}return{o:o,t:t}}
+  function trace(ctx,p,f){var s=segs(p),want=s.t*cl(f);ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);for(var i=1;i<p.length;i++){var d=s.o[i-1];if(want>=d){ctx.lineTo(p[i][0],p[i][1]);want-=d;continue}var k=d?want/d:0;ctx.lineTo(p[i-1][0]+(p[i][0]-p[i-1][0])*k,p[i-1][1]+(p[i][1]-p[i-1][1])*k);break}ctx.stroke()}
+  function at(p,f){var s=segs(p),want=s.t*cl(f);for(var i=1;i<p.length;i++){var d=s.o[i-1];if(want>d){want-=d;continue}var k=d?want/d:0;return[p[i-1][0]+(p[i][0]-p[i-1][0])*k,p[i-1][1]+(p[i][1]-p[i-1][1])*k]}return p[p.length-1]}
+  function dot(ctx,x,y,r,fill,glow){ctx.save();if(glow){ctx.shadowColor=glow;ctx.shadowBlur=14}ctx.fillStyle=fill;ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fill();ctx.restore()}
+  var euro=function(v){return '€ '+Math.round(v/1000)*1000+''};
+  var fmt=function(v){return '€ '+(Math.round(v/1000)*1000).toLocaleString('de-DE')};
+
+  function hero(ctx,w,h,t){
+    var ink=V('--color-text','#e9e9ed'),acc=V('--color-accent','#9184d9');
+    var m=Math.max(58,Math.min(112,w/11));
+    ctx.lineWidth=1;
+    for(var x=m,i=0;x<w;x+=m,i++){var p=cl((t-.05*i)/.9);if(p<=0)continue;fade(ctx,Math.round(x)+.5,0,Math.round(x)+.5,h*p,ink,.075)}
+    for(var y=m,j=0;y<h;y+=m,j++){var q=cl((t-.35-.06*j)/.9);if(q<=0)continue;fade(ctx,0,Math.round(y)+.5,w*q,Math.round(y)+.5,ink,.075)}
+    var pts=[[.01,.95],[.14,.88],[.27,.71],[.4,.76],[.53,.53],[.67,.42],[.81,.31],[.99,.1]].map(function(a){return[a[0]*w,a[1]*h]});
+    var pr=cl((t-.9)/2.6);
+    ctx.save();
+    ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeStyle=rgba(acc,.9);ctx.shadowColor=rgba(acc,.7);ctx.shadowBlur=22;
+    trace(ctx,pts,pr);ctx.restore();
+    pts.forEach(function(p,i){var a=cl(pr*(pts.length-1)-i+.5);if(a<=0)return;dot(ctx,p[0],p[1],3,rgba(ink,.55*a))});
+    if(pr>=1){
+      var p2=at(pts,(t*.085)%1);
+      fade(ctx,Math.round(p2[0])+.5,p2[1]+10,Math.round(p2[0])+.5,h,ink,.2);
+      dot(ctx,p2[0],p2[1],4.5,acc,rgba(acc,.85));
+    }
+  }
+
+  function curve(ctx,w,h,t,o){
+    var ink=V('--color-text','#e9e9ed'),acc=V('--color-accent','#9184d9');
+    var x0=6,x1=w-6,y0=14,y1=h-22;
+    var fx=function(u){return x0+u*(x1-x0)},fy=function(v){return y1-v*(y1-y0)};
+    var prob=function(u){return Math.exp(-3.05*u)*(1-.05*u)};
+    ctx.lineWidth=1;
+    for(var i=0;i<=4;i++)fade(ctx,x0,Math.round(fy(i/4))+.5,x1,Math.round(fy(i/4))+.5,ink,.085);
+    for(var j=0;j<=5;j++)fade(ctx,Math.round(fx(j/5))+.5,y0,Math.round(fx(j/5))+.5,y1,ink,.055);
+    var n=96,pr=cl((t-.3)/1.9),pts=[];
+    for(var k=0;k<=n;k++){var u=k/n;pts.push([fx(u),fy(prob(u))])}
+    var cut=Math.max(1,Math.round(n*pr));
+    ctx.beginPath();ctx.moveTo(pts[0][0],y1);
+    for(var a=0;a<=cut;a++)ctx.lineTo(pts[a][0],pts[a][1]);
+    ctx.lineTo(pts[cut][0],y1);ctx.closePath();
+    var g=ctx.createLinearGradient(0,y0,0,y1);
+    g.addColorStop(0,rgba(acc,.3));g.addColorStop(1,rgba(acc,0));
+    ctx.fillStyle=g;ctx.fill();
+    ctx.save();ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeStyle=acc;ctx.shadowColor=rgba(acc,.6);ctx.shadowBlur=18;
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+    for(var b=1;b<=cut;b++)ctx.lineTo(pts[b][0],pts[b][1]);
+    ctx.stroke();ctx.restore();
+    if(pr>=1){
+      var u2=.5+.43*Math.sin(t*.36),xx=fx(u2),yy=fy(prob(u2));
+      ctx.lineWidth=1;fade(ctx,Math.round(xx)+.5,y0,Math.round(xx)+.5,y1,ink,.38);
+      dot(ctx,xx,yy,5,V('--color-accent-200','#e7e5fe'),rgba(acc,.9));
+      if(o.readout&&t-(o._l||0)>.1){o._l=t;o.readout.textContent=fmt(40000+u2*2460000)+'   ·   '+(prob(u2)*100).toFixed(1).replace('.',',')+' % p. a.'}
+    }
+  }
+
+  function flow(ctx,w,h,t){
+    var ink=V('--color-text','#e9e9ed'),acc=V('--color-accent','#9184d9');
+    var lanes=4,rr=4;
+    function rnd(x,y,bw,bh){var r=Math.min(rr,bh/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+bw-r,y);ctx.quadraticCurveTo(x+bw,y,x+bw,y+r);ctx.lineTo(x+bw,y+bh-r);ctx.quadraticCurveTo(x+bw,y+bh,x+bw-r,y+bh);ctx.lineTo(x+r,y+bh);ctx.quadraticCurveTo(x,y+bh,x,y+bh-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill()}
+    for(var i=0;i<lanes;i++){
+      var y=Math.round(h*(i+.5)/lanes)+.5;
+      ctx.lineWidth=1;ctx.setLineDash([5,6]);ctx.lineDashOffset=-t*20;
+      fade(ctx,4,y,w-16,y,ink,.2);
+      ctx.setLineDash([]);
+      ctx.fillStyle=rgba(ink,.3);
+      ctx.beginPath();ctx.moveTo(w-12,y-4);ctx.lineTo(w-3,y);ctx.lineTo(w-12,y+4);ctx.closePath();ctx.fill();
+      var sp=.15+i*.03,bw=28,bh=Math.max(8,h/lanes*.3);
+      for(var k=0;k<2;k++){
+        var q=((t*sp+i*.27+k*.5)%1.2)-.1;
+        if(q<0||q>1)continue;
+        var x=6+q*(w-bw-24);
+        if(i===1){ctx.save();ctx.shadowColor=rgba(acc,.8);ctx.shadowBlur=16;ctx.fillStyle=acc;rnd(x,y-bh/2,bw,bh);ctx.restore()}
+        else{ctx.fillStyle=rgba(ink,.5);rnd(x,y-bh/2,bw,bh)}
+        ctx.fillStyle=rgba(ink,.1);rnd(x-17,y-bh/2,13,bh);
+      }
+    }
+  }
+
+  function radar(ctx,w,h,t){
+    var ink=V('--color-text','#e9e9ed'),acc=V('--color-accent','#9184d9');
+    var cx=w/2,cy=h/2,R=Math.min(w,h)/2-8;
+    ctx.lineWidth=1;
+    for(var i=1;i<=3;i++){
+      var p=cl((t-i*.2)/.7);if(p<=0)continue;
+      ctx.strokeStyle=rgba(ink,.11);
+      ctx.beginPath();ctx.arc(cx,cy,R*i/3,-1.5708,-1.5708+6.2832*p);ctx.stroke();
+    }
+    var cr=cl((t-.25)/.8);
+    fade(ctx,cx-R*cr,cy,cx+R*cr,cy,ink,.09);
+    fade(ctx,cx,cy-R*cr,cx,cy+R*cr,ink,.09);
+    var a=t*.46;
+    ctx.save();
+    var sw=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    sw.addColorStop(0,rgba(acc,.3));sw.addColorStop(1,rgba(acc,0));
+    ctx.fillStyle=sw;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a-.85,a);ctx.closePath();ctx.fill();
+    ctx.restore();
+    ctx.save();ctx.lineCap='round';ctx.lineWidth=1.6;
+    ctx.strokeStyle=rgba(acc,.85);ctx.shadowColor=rgba(acc,.7);ctx.shadowBlur=14;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();ctx.restore();
+    [[.6,.7],[.4,2.2],[.85,3.5],[.3,4.6],[.7,5.6]].forEach(function(b){
+      var d=(a-b[1])%6.2832;if(d<0)d+=6.2832;
+      var gl=cl(1-d/1.7);
+      var bx=cx+Math.cos(b[1])*R*b[0],by=cy+Math.sin(b[1])*R*b[0];
+      dot(ctx,bx,by,2.6+2.4*gl,rgba(ink,.2+.75*gl),gl>.15?rgba(acc,.8*gl):null);
+    });
+  }
+
+  var KINDS={'koz-hero':hero,'koz-curve':curve,'koz-flow':flow,'koz-radar':radar};
+
+  function attach(canvas,draw,opts){
+    var ctx=canvas.getContext('2d');if(!ctx)return;
+    var w=1,h=1,vis=true,t0=0;
+    function size(){
+      var r=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+      w=Math.max(1,r.width||canvas.offsetWidth||1);h=Math.max(1,r.height||canvas.offsetHeight||1);
+      canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function still(){size();ctx.clearRect(0,0,w,h);draw(ctx,w,h,7,opts)}
+    if(window.ResizeObserver)new ResizeObserver(function(){size();if(reduced())still()}).observe(canvas);
+    else addEventListener('resize',function(){size();if(reduced())still()});
+    if(reduced()){still();return}
+    if(window.IntersectionObserver)new IntersectionObserver(function(e){vis=e[0].isIntersecting},{threshold:0}).observe(canvas);
+    size();
+    requestAnimationFrame(function loop(now){
+      requestAnimationFrame(loop);
+      if(!t0)t0=now;
+      if(!vis)return;
+      if(w<2||h<2)size();
+      ctx.clearRect(0,0,w,h);
+      draw(ctx,w,h,(now-t0)/1000,opts);
+    });
+  }
+
+  function initLive(){
+    var n=0,ids=Object.keys(KINDS);
+    ids.forEach(function(id){
+      var el=document.getElementById(id);if(!el)return;n++;
+      if(el.dataset.kozLive)return;el.dataset.kozLive='1';
+      attach(el,KINDS[id],{readout:document.getElementById('koz-readout')});
+    });
+    return n>0;
+  }
+  function initAmpel(){
+    var els=document.querySelectorAll('[data-ampel]:not([data-koz-done])');
+    Array.prototype.forEach.call(els,function(el){
+      el.dataset.kozDone='1';
+      var styles=[
+        'box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--color-text) 20%,transparent)',
+        'background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--color-text) 55%,transparent) 0 1.5px,transparent 1.5px 5px)',
+        'background:var(--color-accent);box-shadow:0 0 16px color-mix(in srgb,var(--color-accent) 55%,transparent)'
+      ];
+      var anim=!reduced();
+      el.getAttribute('data-ampel').split(',').forEach(function(v,i){
+        var c=document.createElement('div');
+        c.setAttribute('style','aspect-ratio:1;border-radius:var(--radius-sm);'+(styles[+v]||styles[0])+(anim?';animation:kozPop .55s cubic-bezier(.22,.61,.36,1) '+(.03*i).toFixed(2)+'s both':''));
+        el.appendChild(c);
+      });
+    });
+  }
+  function initReveal(){
+    var els=document.querySelectorAll('.rv:not([data-koz-rv])');
+    if(!els.length)return;
+    if(reduced()||!window.IntersectionObserver){
+      Array.prototype.forEach.call(els,function(e){e.dataset.kozRv='1';e.classList.add('in')});return;
+    }
+    var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{rootMargin:'0px 0px -7% 0px',threshold:.05});
+    Array.prototype.forEach.call(els,function(e){
+      e.dataset.kozRv='1';
+      if(e.getBoundingClientRect().top<(innerHeight||800)*1.05)e.classList.add('in');else io.observe(e);
+    });
+  }
+  function initForm(){
+    var f=document.getElementById('koz-form');
+    if(!f||f.dataset.kozDone)return;f.dataset.kozDone='1';
+    var dlg=document.getElementById('koz-danke'),h=document.getElementById('koz-hinweis');
+    function zeige(){if(!dlg)return;dlg.hidden=false;dlg.style.display='grid';var b=dlg.querySelector('[data-koz-close]');if(b)b.focus()}
+    function schliesse(){if(!dlg)return;dlg.hidden=true;dlg.style.display='none'}
+    if(dlg){
+      dlg.addEventListener('click',function(e){if(e.target===dlg||e.target.hasAttribute('data-koz-close'))schliesse()});
+      addEventListener('keydown',function(e){if(e.key==='Escape')schliesse()});
+    }
+    f.addEventListener('submit',function(e){
+      e.preventDefault();
+      var btn=f.querySelector('button[type=submit]'),label=btn?btn.innerHTML:'';
+      if(btn){btn.disabled=true;btn.innerHTML='Wird gesendet …'}
+      if(h)h.textContent='';
+      fetch(f.getAttribute('action')||'/',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:new URLSearchParams(new FormData(f)).toString()
+      }).then(function(r){
+        if(!r.ok)throw new Error(r.status);
+        f.reset();zeige();
+      }).catch(function(){
+        if(h)h.textContent='Senden nicht möglich. Bitte schreiben Sie an info@koz-itsecurity.com.';
+      }).then(function(){
+        if(btn){btn.disabled=false;btn.innerHTML=label}
+      });
+    });
+  }
+  var tries=0,timer;
+  function boot(){var ok=initLive();initAmpel();initForm();initReveal();if(ok&&++tries>3&&timer)clearInterval(timer)}
+  timer=setInterval(function(){boot();if(tries>140)clearInterval(timer)},150);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  addEventListener('load',boot);
+})();
+</script>
+</head>
+<body>
+<div style="background:var(--color-bg);color:var(--color-text);min-height:100vh">
+
+<header style="position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--color-bg) 86%,transparent);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4)">
+<div class="wrap" style="display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-4) var(--space-8);padding-top:var(--space-4);padding-bottom:var(--space-4)">
+<a href="#top" aria-label="KOZ IT-Security — Startseite" style="display:flex;align-items:center;margin-right:auto"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MzMuODMgMTQ0LjAwIiB3aWR0aD0iNDM0IiBoZWlnaHQ9IjE0NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJLT1ogSVQtU2VjdXJpdHkiIHhtbG5zOmMycGE9Imh0dHA6Ly9jMnBhLm9yZy9tYW5pZmVzdCI+PHRpdGxlPktPWiBJVC1TZWN1cml0eTwvdGl0bGU+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTE0Ljc1MDAgLTYuNjY2Nykgc2NhbGUoMi40NTgzMykiPjxyZWN0IHg9IjYiIHk9IjgiIHdpZHRoPSI1MiIgaGVpZ2h0PSIxMSIgZmlsbD0iI0YzRjVGRSI+PC9yZWN0PjxwYXRoIGQ9Ik00MCAxOSBINTggTDI0IDQ1IEg2IFoiIGZpbGw9IiNCNUFCRkMiPjwvcGF0aD48cmVjdCB4PSI2IiB5PSI0NSIgd2lkdGg9IjUyIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjNGNUZFIj48L3JlY3Q+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE2Ny44MyAyKSI+PGcgZmlsbD0iI0YzRjVGRSI+PHBhdGggZD0iTTAgMCBIMjMgVjM0IEw1MiAwIEg3NiBMNDEgNTAgTDc2IDEwMCBINTAgTDIzIDY2IFYxMDAgSDAgWiI+PC9wYXRoPjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDg2IDApIiBkPSJNMCA1MCBBNDUgNTEuNSAwIDEgMCA5MCA1MCBBNDUgNTEuNSAwIDEgMCAwIDUwIFogTTIzIDUwIEEyMiAyOC41IDAgMSAxIDY3IDUwIEEyMiAyOC41IDAgMSAxIDIzIDUwIFoiIGZpbGwtcnVsZT0iZXZlbm9kZCI+PC9wYXRoPjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE5MCAwKSIgZD0iTTAgMCBINzYgVjIzIEwzMCA3NyBINzYgVjEwMCBIMCBWNzcgTDQ2IDIzIEgwIFoiPjwvcGF0aD48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE2Ny44MyAxNDQpIj48ZyBmaWxsPSIjQ0ZEM0U1Ij48cGF0aCBkPSJNNC42MDk3NTYwOTc1NjA5NzYgLTE2Ljk1MTIxOTUxMjE5NTEyNFYwLjBIMS44MjkyNjgyOTI2ODI5MjdWLTE2Ljk1MTIxOTUxMjE5NTEyNFoiPjwvcGF0aD48cGF0aCBkPSJNMzEuMDE3MDczMTcwNzMxNzA2IC0xNi45NTEyMTk1MTIxOTUxMjRWLTE0LjY4MjkyNjgyOTI2ODI5M0gyNi41MDQ4NzgwNDg3ODA0ODdWMC4wSDIzLjcyNDM5MDI0MzkwMjQzN1YtMTQuNjgyOTI2ODI5MjY4MjkzSDE5LjE4NzgwNDg3ODA0ODc4Vi0xNi45NTEyMTk1MTIxOTUxMjRaIj48L3BhdGg+PHBhdGggZD0iTTU1LjkzNjU4NTM2NTg1MzY2IC0xMC4wVi03LjY1ODUzNjU4NTM2NTg1NEg0NS45MTIxOTUxMjE5NTEyMlYtMTAuMFoiPjwvcGF0aD48cGF0aCBkPSJNNzEuMjcwNzMxNzA3MzE3MDggLTQuNjgyOTI2ODI5MjY4MjkzSDc0LjI0NjM0MTQ2MzQxNDY0UTc0LjM0MzkwMjQzOTAyNDM5IC0zLjU4NTM2NTg1MzY1ODUzNjcgNzUuMTEyMTk1MTIxOTUxMjMgLTIuODc4MDQ4NzgwNDg3ODA0OFE3NS44ODA0ODc4MDQ4NzgwNiAtMi4xNzA3MzE3MDczMTcwNzMzIDc3LjI3MDczMTcwNzMxNzA4IC0yLjE3MDczMTcwNzMxNzA3MzNRNzguNzA5NzU2MDk3NTYwOTggLTIuMTcwNzMxNzA3MzE3MDczMyA3OS41MTQ2MzQxNDYzNDE0OCAtMi44NjU4NTM2NTg1MzY1ODU3UTgwLjMxOTUxMjE5NTEyMTk2IC0zLjU2MDk3NTYwOTc1NjA5NzYgODAuMzE5NTEyMTk1MTIxOTYgLTQuNjU4NTM2NTg1MzY1ODU0UTgwLjMxOTUxMjE5NTEyMTk2IC01LjUxMjE5NTEyMTk1MTIyIDc5LjgxOTUxMjE5NTEyMTk2IC02LjA0ODc4MDQ4NzgwNDg3OFE3OS4zMTk1MTIxOTUxMjE5NiAtNi41ODUzNjU4NTM2NTg1MzcgNzguNTc1NjA5NzU2MDk3NTYgLTYuODc4MDQ4NzgwNDg3ODA2UTc3LjgzMTcwNzMxNzA3MzE3IC03LjE3MDczMTcwNzMxNzA3MyA3Ni41MTQ2MzQxNDYzNDE0NiAtNy41MTIxOTUxMjE5NTEyMlE3NC44NTYwOTc1NjA5NzU2MSAtNy45NTEyMTk1MTIxOTUxMjIgNzMuODE5NTEyMTk1MTIxOTQgLTguNDAyNDM5MDI0MzkwMjQ0UTcyLjc4MjkyNjgyOTI2ODI5IC04Ljg1MzY1ODUzNjU4NTM2NiA3Mi4wNTEyMTk1MTIxOTUxMyAtOS44MDQ4NzgwNDg3ODA0ODhRNzEuMzE5NTEyMTk1MTIxOTYgLTEwLjc1NjA5NzU2MDk3NTYxIDcxLjMxOTUxMjE5NTEyMTk2IC0xMi4zNDE0NjM0MTQ2MzQxNDdRNzEuMzE5NTEyMTk1MTIxOTYgLTEzLjgwNDg3ODA0ODc4MDQ4OCA3Mi4wNTEyMTk1MTIxOTUxMyAtMTQuOTAyNDM5MDI0MzkwMjQ0UTcyLjc4MjkyNjgyOTI2ODI5IC0xNi4wIDc0LjEgLTE2LjU4NTM2NTg1MzY1ODUzN1E3NS40MTcwNzMxNzA3MzE3MSAtMTcuMTcwNzMxNzA3MzE3MDc0IDc3LjE0ODc4MDQ4NzgwNDg4IC0xNy4xNzA3MzE3MDczMTcwNzRRNzkuNjEyMTk1MTIxOTUxMjIgLTE3LjE3MDczMTcwNzMxNzA3NCA4MS4xODUzNjU4NTM2NTg1NCAtMTUuOTM5MDI0MzkwMjQzOTAzUTgyLjc1ODUzNjU4NTM2NTg2IC0xNC43MDczMTcwNzMxNzA3MzEgODIuOTI5MjY4MjkyNjgyOTMgLTEyLjU2MDk3NTYwOTc1NjA5N0g3OS44NTYwOTc1NjA5NzU2MVE3OS43ODI5MjY4MjkyNjgyOSAtMTMuNDg3ODA0ODc4MDQ4NzgxIDc4Ljk3ODA0ODc4MDQ4NzggLTE0LjE0NjM0MTQ2MzQxNDYzNFE3OC4xNzMxNzA3MzE3MDczMiAtMTQuODA0ODc4MDQ4NzgwNDg4IDc2Ljg1NjA5NzU2MDk3NTYxIC0xNC44MDQ4NzgwNDg3ODA0ODhRNzUuNjYwOTc1NjA5NzU2MSAtMTQuODA0ODc4MDQ4NzgwNDg4IDc0LjkwNDg3ODA0ODc4MDQ5IC0xNC4xOTUxMjE5NTEyMTk1MTJRNzQuMTQ4NzgwNDg3ODA0ODggLTEzLjU4NTM2NTg1MzY1ODUzNyA3NC4xNDg3ODA0ODc4MDQ4OCAtMTIuNDM5MDI0MzkwMjQzOTAzUTc0LjE0ODc4MDQ4NzgwNDg4IC0xMS42NTg1MzY1ODUzNjU4NTMgNzQuNjI0MzkwMjQzOTAyNDQgLTExLjE1ODUzNjU4NTM2NTg1M1E3NS4xMDAwMDAwMDAwMDAwMSAtMTAuNjU4NTM2NTg1MzY1ODUzIDc1LjgzMTcwNzMxNzA3MzE4IC0xMC4zNjU4NTM2NTg1MzY1ODdRNzYuNTYzNDE0NjM0MTQ2MzQgLTEwLjA3MzE3MDczMTcwNzMxOCA3Ny44MzE3MDczMTcwNzMxNyAtOS43MzE3MDczMTcwNzMxNzFRNzkuNTE0NjM0MTQ2MzQxNDYgLTkuMjY4MjkyNjgyOTI2ODMgODAuNTc1NjA5NzU2MDk3NTYgLTguODA0ODc4MDQ4NzgwNDg4UTgxLjYzNjU4NTM2NTg1MzY2IC04LjM0MTQ2MzQxNDYzNDE0NyA4Mi4zODA0ODc4MDQ4NzgwNCAtNy4zNzgwNDg3ODA0ODc4MDZRODMuMTI0MzkwMjQzOTAyNDQgLTYuNDE0NjM0MTQ2MzQxNDY0IDgzLjEyNDM5MDI0MzkwMjQ0IC00LjgwNDg3ODA0ODc4MDQ4OFE4My4xMjQzOTAyNDM5MDI0NCAtMy41MTIxOTUxMjE5NTEyMTk1IDgyLjQyOTI2ODI5MjY4MjkzIC0yLjM2NTg1MzY1ODUzNjU4NTJRODEuNzM0MTQ2MzQxNDYzNDEgLTEuMjE5NTEyMTk1MTIxOTUxMiA4MC40MDQ4NzgwNDg3ODA0OSAtMC41MjQzOTAyNDM5MDI0MzlRNzkuMDc1NjA5NzU2MDk3NTYgMC4xNzA3MzE3MDczMTcwNzMxOCA3Ny4yNzA3MzE3MDczMTcwOCAwLjE3MDczMTcwNzMxNzA3MzE4UTc1LjU2MzQxNDYzNDE0NjM0IDAuMTcwNzMxNzA3MzE3MDczMTggNzQuMTk3NTYwOTc1NjA5NzUgLTAuNDI2ODI5MjY4MjkyNjgyOVE3Mi44MzE3MDczMTcwNzMxNyAtMS4wMjQzOTAyNDM5MDI0MzkgNzIuMDUxMjE5NTEyMTk1MTMgLTIuMTIxOTUxMjE5NTEyMTk1MlE3MS4yNzA3MzE3MDczMTcwOCAtMy4yMTk1MTIxOTUxMjE5NTE0IDcxLjI3MDczMTcwNzMxNzA4IC00LjY4MjkyNjgyOTI2ODI5M1oiPjwvcGF0aD48cGF0aCBkPSJNMTAwLjk5NTEyMTk1MTIxOTUyIC0xNC43MDczMTcwNzMxNzA3MzFWLTkuNzMxNzA3MzE3MDczMTcxSDEwNi44NDg3ODA0ODc4MDQ4OVYtNy40NjM0MTQ2MzQxNDYzNDJIMTAwLjk5NTEyMTk1MTIxOTUyVi0yLjI2ODI5MjY4MjkyNjgyOTVIMTA3LjU4MDQ4NzgwNDg3ODA2VjAuMEg5OC4yMTQ2MzQxNDYzNDE0N1YtMTYuOTc1NjA5NzU2MDk3NTYySDEwNy41ODA0ODc4MDQ4NzgwNlYtMTQuNzA3MzE3MDczMTcwNzMxWiI+PC9wYXRoPjxwYXRoIGQ9Ik0xMzAuNTI0MzkwMjQzOTAyNDUgLTE3LjE3MDczMTcwNzMxNzA3NFExMzMuMjMxNzA3MzE3MDczMiAtMTcuMTcwNzMxNzA3MzE3MDc0IDEzNS4zNDE0NjM0MTQ2MzQxOCAtMTUuODQxNDYzNDE0NjM0MTQ4UTEzNy40NTEyMTk1MTIxOTUxNCAtMTQuNTEyMTk1MTIxOTUxMjIgMTM4LjQwMjQzOTAyNDM5MDI1IC0xMi4wNzMxNzA3MzE3MDczMThIMTM1LjA2MDk3NTYwOTc1NjFRMTM0LjQwMjQzOTAyNDM5MDI1IC0xMy40MTQ2MzQxNDYzNDE0NjUgMTMzLjIzMTcwNzMxNzA3MzIgLTE0LjA3MzE3MDczMTcwNzMxOFExMzIuMDYwOTc1NjA5NzU2MSAtMTQuNzMxNzA3MzE3MDczMTcxIDEzMC41MjQzOTAyNDM5MDI0NSAtMTQuNzMxNzA3MzE3MDczMTcxUTEyOC44NDE0NjM0MTQ2MzQxNSAtMTQuNzMxNzA3MzE3MDczMTcxIDEyNy41MjQzOTAyNDM5MDI0NSAtMTMuOTc1NjA5NzU2MDk3NTYyUTEyNi4yMDczMTcwNzMxNzA3NCAtMTMuMjE5NTEyMTk1MTIxOTUyIDEyNS40NjM0MTQ2MzQxNDYzNSAtMTEuODA0ODc4MDQ4NzgwNDg4UTEyNC43MTk1MTIxOTUxMjE5NSAtMTAuMzkwMjQzOTAyNDM5MDI1IDEyNC43MTk1MTIxOTUxMjE5NSAtOC41MTIxOTUxMjE5NTEyMTlRMTI0LjcxOTUxMjE5NTEyMTk1IC02LjYzNDE0NjM0MTQ2MzQxNSAxMjUuNDYzNDE0NjM0MTQ2MzUgLTUuMjE5NTEyMTk1MTIxOTUxUTEyNi4yMDczMTcwNzMxNzA3NCAtMy44MDQ4NzgwNDg3ODA0ODggMTI3LjUyNDM5MDI0MzkwMjQ1IC0zLjAzNjU4NTM2NTg1MzY1OVExMjguODQxNDYzNDE0NjM0MTUgLTIuMjY4MjkyNjgyOTI2ODI5NSAxMzAuNTI0MzkwMjQzOTAyNDUgLTIuMjY4MjkyNjgyOTI2ODI5NVExMzIuMDYwOTc1NjA5NzU2MSAtMi4yNjgyOTI2ODI5MjY4Mjk1IDEzMy4yMzE3MDczMTcwNzMyIC0yLjkyNjgyOTI2ODI5MjY4M1ExMzQuNDAyNDM5MDI0MzkwMjUgLTMuNTg1MzY1ODUzNjU4NTM2NyAxMzUuMDYwOTc1NjA5NzU2MSAtNC45MjY4MjkyNjgyOTI2ODNIMTM4LjQwMjQzOTAyNDM5MDI1UTEzNy40NTEyMTk1MTIxOTUxNCAtMi40ODc4MDQ4NzgwNDg3ODA1IDEzNS4zNDE0NjM0MTQ2MzQxOCAtMS4xNzA3MzE3MDczMTcwNzNRMTMzLjIzMTcwNzMxNzA3MzIgMC4xNDYzNDE0NjM0MTQ2MzQxNyAxMzAuNTI0MzkwMjQzOTAyNDUgMC4xNDYzNDE0NjM0MTQ2MzQxN1ExMjguMTM0MTQ2MzQxNDYzNCAwLjE0NjM0MTQ2MzQxNDYzNDE3IDEyNi4xNTg1MzY1ODUzNjU4NSAtMC45NjM0MTQ2MzQxNDYzNDE0UTEyNC4xODI5MjY4MjkyNjgzIC0yLjA3MzE3MDczMTcwNzMxNyAxMjMuMDI0MzkwMjQzOTAyNDUgLTQuMDQ4NzgwNDg3ODA0ODc4UTEyMS44NjU4NTM2NTg1MzY2IC02LjAyNDM5MDI0MzkwMjQzOSAxMjEuODY1ODUzNjU4NTM2NiAtOC41MTIxOTUxMjE5NTEyMTlRMTIxLjg2NTg1MzY1ODUzNjYgLTExLjAgMTIzLjAyNDM5MDI0MzkwMjQ1IC0xMi45NzU2MDk3NTYwOTc1NjJRMTI0LjE4MjkyNjgyOTI2ODMgLTE0Ljk1MTIxOTUxMjE5NTEyMiAxMjYuMTcwNzMxNzA3MzE3MDcgLTE2LjA2MDk3NTYwOTc1NjFRMTI4LjE1ODUzNjU4NTM2NTg1IC0xNy4xNzA3MzE3MDczMTcwNzQgMTMwLjUyNDM5MDI0MzkwMjQ1IC0xNy4xNzA3MzE3MDczMTcwNzRaIj48L3BhdGg+PHBhdGggZD0iTTE1Ni4yMDAwMDAwMDAwMDAwMiAtMTYuOTUxMjE5NTEyMTk1MTI0Vi02LjE0NjM0MTQ2MzQxNDYzNFExNTYuMjAwMDAwMDAwMDAwMDIgLTQuMjE5NTEyMTk1MTIxOTUxIDE1Ny4yMTIxOTUxMjE5NTEyNSAtMy4yNDM5MDI0MzkwMjQzOTA1UTE1OC4yMjQzOTAyNDM5MDI0NiAtMi4yNjgyOTI2ODI5MjY4Mjk1IDE2MC4wMjkyNjgyOTI2ODI5MyAtMi4yNjgyOTI2ODI5MjY4Mjk1UTE2MS44NTg1MzY1ODUzNjU4NyAtMi4yNjgyOTI2ODI5MjY4Mjk1IDE2Mi44NzA3MzE3MDczMTcwOCAtMy4yNDM5MDI0MzkwMjQzOTA1UTE2My44ODI5MjY4MjkyNjgzIC00LjIxOTUxMjE5NTEyMTk1MSAxNjMuODgyOTI2ODI5MjY4MyAtNi4xNDYzNDE0NjM0MTQ2MzRWLTE2Ljk1MTIxOTUxMjE5NTEyNEgxNjYuNjYzNDE0NjM0MTQ2MzZWLTYuMTk1MTIxOTUxMjE5NTEyUTE2Ni42NjM0MTQ2MzQxNDYzNiAtNC4xMjE5NTEyMTk1MTIxOTUgMTY1Ljc2MDk3NTYwOTc1NjEyIC0yLjY4MjkyNjgyOTI2ODI5M1ExNjQuODU4NTM2NTg1MzY1ODcgLTEuMjQzOTAyNDM5MDI0MzkwMiAxNjMuMzQ2MzQxNDYzNDE0NjYgLTAuNTM2NTg1MzY1ODUzNjU4NlExNjEuODM0MTQ2MzQxNDYzNDIgMC4xNzA3MzE3MDczMTcwNzMxOCAxNjAuMDA0ODc4MDQ4NzgwNDggMC4xNzA3MzE3MDczMTcwNzMxOFExNTguMTc1NjA5NzU2MDk3NTcgMC4xNzA3MzE3MDczMTcwNzMxOCAxNTYuNjc1NjA5NzU2MDk3NTcgLTAuNTM2NTg1MzY1ODUzNjU4NlExNTUuMTc1NjA5NzU2MDk3NTcgLTEuMjQzOTAyNDM5MDI0MzkwMiAxNTQuMjk3NTYwOTc1NjA5NzcgLTIuNjgyOTI2ODI5MjY4MjkzUTE1My40MTk1MTIxOTUxMjE5NyAtNC4xMjE5NTEyMTk1MTIxOTUgMTUzLjQxOTUxMjE5NTEyMTk3IC02LjE5NTEyMTk1MTIxOTUxMlYtMTYuOTUxMjE5NTEyMTk1MTI0WiI+PC9wYXRoPjxwYXRoIGQ9Ik0xOTAuODc1NjA5NzU2MDk3NTYgMC4wIDE4Ni45NzMxNzA3MzE3MDczIC02Ljc4MDQ4NzgwNDg3ODA0OUgxODQuODUxMjE5NTEyMTk1MTRWMC4wSDE4Mi4wNzA3MzE3MDczMTcxVi0xNi45NTEyMTk1MTIxOTUxMjRIMTg3LjkyNDM5MDI0MzkwMjQ1UTE4OS44NzU2MDk3NTYwOTc1NiAtMTYuOTUxMjE5NTEyMTk1MTI0IDE5MS4yMjkyNjgyOTI2ODI5NSAtMTYuMjY4MjkyNjgyOTI2ODNRMTkyLjU4MjkyNjgyOTI2ODMgLTE1LjU4NTM2NTg1MzY1ODUzNyAxOTMuMjUzNjU4NTM2NTg1MzYgLTE0LjQzOTAyNDM5MDI0MzkwM1ExOTMuOTI0MzkwMjQzOTAyNDUgLTEzLjI5MjY4MjkyNjgyOTI2OSAxOTMuOTI0MzkwMjQzOTAyNDUgLTExLjg3ODA0ODc4MDQ4NzgwNlExOTMuOTI0MzkwMjQzOTAyNDUgLTEwLjIxOTUxMjE5NTEyMTk1MiAxOTIuOTYwOTc1NjA5NzU2MSAtOC44NjU4NTM2NTg1MzY1ODdRMTkxLjk5NzU2MDk3NTYwOTc2IC03LjUxMjE5NTEyMTk1MTIyIDE4OS45OTc1NjA5NzU2MDk3NiAtNy4wMjQzOTAyNDM5MDI0MzlMMTk0LjE5MjY4MjkyNjgyOTI2IDAuMFpNMTg0Ljg1MTIxOTUxMjE5NTE0IC05LjBIMTg3LjkyNDM5MDI0MzkwMjQ1UTE4OS40ODUzNjU4NTM2NTg1NSAtOS4wIDE5MC4yNzgwNDg3ODA0ODc4NCAtOS43ODA0ODc4MDQ4NzgwNVExOTEuMDcwNzMxNzA3MzE3MSAtMTAuNTYwOTc1NjA5NzU2MDk3IDE5MS4wNzA3MzE3MDczMTcxIC0xMS44NzgwNDg3ODA0ODc4MDZRMTkxLjA3MDczMTcwNzMxNzEgLTEzLjE5NTEyMTk1MTIxOTUxMiAxOTAuMjkwMjQzOTAyNDM5MDQgLTEzLjkzOTAyNDM5MDI0MzkwM1ExODkuNTA5NzU2MDk3NTYxIC0xNC42ODI5MjY4MjkyNjgyOTMgMTg3LjkyNDM5MDI0MzkwMjQ1IC0xNC42ODI5MjY4MjkyNjgyOTNIMTg0Ljg1MTIxOTUxMjE5NTE0WiI+PC9wYXRoPjxwYXRoIGQ9Ik0yMTIuMDYzNDE0NjM0MTQ2MzcgLTE2Ljk1MTIxOTUxMjE5NTEyNFYwLjBIMjA5LjI4MjkyNjgyOTI2ODMyVi0xNi45NTEyMTk1MTIxOTUxMjRaIj48L3BhdGg+PHBhdGggZD0iTTIzOC40NzA3MzE3MDczMTcwNyAtMTYuOTUxMjE5NTEyMTk1MTI0Vi0xNC42ODI5MjY4MjkyNjgyOTNIMjMzLjk1ODUzNjU4NTM2NTg2VjAuMEgyMzEuMTc4MDQ4NzgwNDg3OFYtMTQuNjgyOTI2ODI5MjY4MjkzSDIyNi42NDE0NjM0MTQ2MzQxM1YtMTYuOTUxMjE5NTEyMTk1MTI0WiI+PC9wYXRoPjxwYXRoIGQ9Ik0yNjUuNjM0MTQ2MzQxNDYzNCAtMTYuOTUxMjE5NTEyMTk1MTI0IDI2MC4wMjQzOTAyNDM5MDI0IC02LjE0NjM0MTQ2MzQxNDYzNFYwLjBIMjU3LjI0MzkwMjQzOTAyNDRWLTYuMTQ2MzQxNDYzNDE0NjM0TDI1MS42MDk3NTYwOTc1NjEgLTE2Ljk1MTIxOTUxMjE5NTEyNEgyNTQuNzA3MzE3MDczMTcwNzRMMjU4LjYzNDE0NjM0MTQ2MzQgLTguNjM0MTQ2MzQxNDYzNDE1TDI2Mi41NjA5NzU2MDk3NTYxIC0xNi45NTEyMTk1MTIxOTUxMjRaIj48L3BhdGg+PC9nPjwvZz48L3N2Zz4=" alt="KOZ IT-Security" style="height:clamp(30px,2.9vw,38px);width:auto"></a>
+<nav style="display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-4) var(--space-8)">
+<a class="navlink" href="gap-analyse.html">Gap-Analyse</a>
+<a class="navlink" href="#leistungen">Leistungen</a>
+<a class="navlink" href="#fair">Risiko in Euro</a>
+<a class="navlink" href="#umsetzung">Umsetzung</a>
+<a class="navlink" href="#ueber">Über uns</a>
+<a class="btn btn-primary" href="#kontakt">Ersttermin</a>
+</nav>
+</div>
+<div class="rule"></div>
+</header>
+
+<section id="top" data-screen-label="Hero" style="position:relative;overflow:hidden">
+<div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(90% 70% at 12% -10%,color-mix(in srgb,var(--color-accent) 16%,transparent) 0%,transparent 62%),radial-gradient(70% 60% at 92% 8%,color-mix(in srgb,var(--color-section-glow) 40%,transparent) 0%,transparent 60%)"></div>
+<canvas id="koz-hero" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+<div class="wrap" style="position:relative;padding-top:clamp(56px,8vw,124px);padding-bottom:clamp(40px,5vw,72px)">
+<p class="eyebrow rv" style="margin:0 0 calc(var(--space-8) * 1.2)">Informationssicherheit für kleine und mittelständische Unternehmen</p>
+<h1 class="h-xl rv" style="max-width:17ch;transition-delay:.06s">Erst messen.<br>Dann investieren.</h1>
+<p class="lead rv" style="max-width:54ch;margin-top:calc(var(--space-8) * 1.3);transition-delay:.12s">Wir sagen Ihnen zuerst, wo Sie stehen und was ein Ausfall kosten würde — in Euro. Danach setzen wir genau die Maßnahmen um, die daran messbar etwas ändern. Sie erhalten damit die Nachweise, die Kunden, Versicherer und Prüfer verlangen, und entscheiden auf Zahlen statt auf Bauchgefühl.</p>
+<div class="rv" style="display:flex;gap:var(--space-4);flex-wrap:wrap;margin-top:calc(var(--space-8) * 1.6);transition-delay:.18s">
+<a class="btn btn-primary btn-lg" href="#kontakt">Ersttermin vereinbaren <i class="ph ph-arrow-right" aria-hidden="true" style="font-size:17px"></i></a>
+<a class="btn btn-secondary btn-lg" href="#leistungen">Leistungen ansehen</a>
+</div>
+<p class="dim rv" style="display:flex;align-items:center;gap:var(--space-3);font-size:14px;margin:calc(var(--space-8) * 1.1) 0 0;transition-delay:.24s"><i class="ph ph-clock-countdown ico" aria-hidden="true" style="font-size:17px"></i>30 Minuten, kostenfrei, ohne Vorbereitung Ihrerseits</p>
+</div>
+<div class="wrap" style="position:relative;padding-bottom:clamp(40px,5vw,72px)">
+<div class="rv" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--space-4);transition-delay:.3s">
+<div class="panel lift" style="padding:calc(var(--space-6) * 1.15)"><div class="h-md" style="font-size:20px">VdS 10100</div><p class="dim" style="font-size:14px;margin:var(--space-2) 0 0;line-height:1.45">Bewertungsrahmen und laufende Betreuung</p></div>
+<div class="panel lift" style="padding:calc(var(--space-6) * 1.15)"><div class="h-md" style="font-size:20px">FAIR</div><p class="dim" style="font-size:14px;margin:var(--space-2) 0 0;line-height:1.45">Cyber-Risiko quantifiziert in Euro</p></div>
+<div class="panel lift" style="padding:calc(var(--space-6) * 1.15)"><div class="h-md" style="font-size:20px">DSGVO</div><p class="dim" style="font-size:14px;margin:var(--space-2) 0 0;line-height:1.45">Externer Datenschutzbeauftragter</p></div>
+<div class="panel lift" style="padding:calc(var(--space-6) * 1.15)"><div class="h-md" style="font-size:20px">Proxmox</div><p class="dim" style="font-size:14px;margin:var(--space-2) 0 0;line-height:1.45">Migration und Managed-Betrieb</p></div>
+</div>
+</div>
+<div class="rule"></div>
+</section>
+
+<section data-screen-label="Kennen Sie das" class="sec">
+<div class="wrap">
+<p class="eyebrow rv" style="margin:0 0 var(--space-8)">Kennen Sie das?</p>
+<div class="rv" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:var(--space-6);transition-delay:.06s">
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-clipboard-text ico" aria-hidden="true" style="font-size:24px"></i><p class="body" style="font-size:16.5px;line-height:1.5">Ein Kunde schickt einen Sicherheitsfragebogen — und niemand weiß, wer ihn ausfüllen soll.</p></div>
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-shield-warning ico" aria-hidden="true" style="font-size:24px"></i><p class="body" style="font-size:16.5px;line-height:1.5">Die Versicherung will Nachweise sehen, die in dieser Form nie dokumentiert wurden.</p></div>
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-tag ico" aria-hidden="true" style="font-size:24px"></i><p class="body" style="font-size:16.5px;line-height:1.5">Der Dienstleister empfiehlt ein Produkt. Wieder eins. Ob es das richtige ist, kann niemand prüfen.</p></div>
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-hard-drives ico" aria-hidden="true" style="font-size:24px"></i><p class="body" style="font-size:16.5px;line-height:1.5">Das Backup läuft. Ob es sich zurückspielen lässt, hat lange niemand getestet.</p></div>
+</div>
+<p class="lead rv" style="max-width:62ch;margin-top:calc(var(--space-8) * 1.8);transition-delay:.12s">Das ist kein Versäumnis, sondern die Folge eines gewachsenen Betriebs. Wir fangen deshalb nicht bei der Technik an, sondern bei einer Bestandsaufnahme, die Sie schwarz auf weiß in der Hand halten.</p>
+</div>
+</section>
+
+<section data-screen-label="Ablauf" style="background:var(--color-surface)">
+<div class="rule"></div>
+<div class="wrap sec">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--space-8) clamp(32px,5vw,72px);align-items:start">
+<div class="rv">
+<p class="eyebrow" style="margin:0 0 var(--space-6)">Der Weg</p>
+<h2 class="h-lg" style="max-width:18ch">Vier Schritte, in dieser Reihenfolge</h2>
+<p class="body dim" style="max-width:44ch;margin-top:var(--space-6)">Jeder Schritt endet mit einem Dokument, das Sie auch ohne uns verstehen und gegenüber Kunden, Versicherern und Prüfern verwenden können.</p>
+</div>
+<ul class="rowlist rv" style="transition-delay:.1s">
+<li><span class="num">01</span><div><div class="h-md" style="font-size:19px">Gap-Analyse</div><p class="body dim" style="margin-top:var(--space-2);font-size:15px">Ist-Stand gegen VdS 10100, jede Anforderung mit Ampelbewertung und Begründung.</p></div></li>
+<li><span class="num">02</span><div><div class="h-md" style="font-size:19px">Quantifizierung</div><p class="body dim" style="margin-top:var(--space-2);font-size:15px">Die Lücken werden nach FAIR in Schadenshöhe und Eintrittswahrscheinlichkeit übersetzt.</p></div></li>
+<li><span class="num">03</span><div><div class="h-md" style="font-size:19px">Umsetzung</div><p class="body dim" style="margin-top:var(--space-2);font-size:15px">Wir setzen die Maßnahmen aus der Analyse selbst um — in der Reihenfolge des größten Risikoabbaus, nicht nach Produktkatalog. Setzt Ihr eigener Dienstleister um, steuern wir die Liste.</p></div></li>
+<li><span class="num">04</span><div><div class="h-md" style="font-size:19px">Betreuung</div><p class="body dim" style="margin-top:var(--space-2);font-size:15px">Laufender Betrieb, jährliche Nachweise, Wirksamkeitsbericht für die Geschäftsführung.</p></div></li>
+</ul>
+</div>
+</div>
+<div class="rule"></div>
+</section>
+
+<section id="gap" data-screen-label="Gap-Analyse" class="sec">
+<div class="wrap" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(32px,5vw,72px);align-items:center">
+<div class="rv">
+<p class="eyebrow" style="margin:0 0 var(--space-6)">Hauptprodukt</p>
+<h2 class="h-lg" style="max-width:20ch">Gap-Analyse mit Ampelbewertung</h2>
+<p class="body" style="max-width:50ch;margin-top:var(--space-8)">Wir gehen die Anforderungen der VdS 10100 mit Ihnen durch, sehen uns Technik und Abläufe an und bewerten jede Anforderung einzeln: erfüllt, teilweise erfüllt, offen. Jede Bewertung steht mit Begründung, Nachweis und Aufwandsschätzung im Bericht.</p>
+<p class="body dim" style="max-width:50ch;margin-top:var(--space-4)">Das Ergebnis ist eine Liste, die Sie priorisieren können — und die als Grundlage für Budgetentscheidungen, Versicherungsgespräche und Kundenanfragen taugt.</p>
+<a class="btn btn-secondary" href="gap-analyse.html" style="margin-top:calc(var(--space-8) * 1.2)">Ablauf und Umfang im Detail <i class="ph ph-arrow-right" aria-hidden="true" style="font-size:16px"></i></a>
+</div>
+<div class="rv" style="transition-delay:.1s">
+<div class="panel" style="padding:calc(var(--space-8) * 1.2)">
+<div data-ampel="2,1,0,0,1,0,0,2,0,1,0,0,1,0,2,0,0,0" style="display:grid;grid-template-columns:repeat(6,1fr);gap:var(--space-3)"></div>
+<div style="height:1px;background:var(--rule-soft);margin:calc(var(--space-8) * 1.1) 0 var(--space-6)"></div>
+<div style="display:flex;flex-wrap:wrap;gap:var(--space-4) var(--space-8);font-size:13.5px">
+<span style="display:flex;align-items:center;gap:var(--space-3)"><span style="width:13px;height:13px;border-radius:var(--radius-sm);background:var(--color-accent);box-shadow:0 0 12px color-mix(in srgb,var(--color-accent) 55%,transparent);display:block"></span>offen</span>
+<span style="display:flex;align-items:center;gap:var(--space-3)"><span style="width:13px;height:13px;border-radius:var(--radius-sm);background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--color-text) 55%,transparent) 0 1.5px,transparent 1.5px 5px);display:block"></span>teilweise erfüllt</span>
+<span style="display:flex;align-items:center;gap:var(--space-3)"><span style="width:13px;height:13px;border-radius:var(--radius-sm);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--color-text) 20%,transparent);display:block"></span>erfüllt</span>
+</div>
+</div>
+<p class="dim" style="font-size:13px;margin:var(--space-4) 0 0">Beispielhafte Bewertungsmatrix, keine Kundendaten.</p>
+</div>
+</div>
+</section>
+
+<section id="fair" data-screen-label="FAIR" style="background:var(--color-surface)">
+<div class="rule"></div>
+<div class="wrap sec" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(32px,5vw,72px);align-items:center">
+<div class="rv">
+<p class="eyebrow" style="margin:0 0 var(--space-6)">Cyber-Risiko nach FAIR</p>
+<h2 class="h-lg" style="max-width:19ch">Was ein Ausfall kostet, in Euro</h2>
+<p class="body" style="max-width:50ch;margin-top:var(--space-8)">FAIR zerlegt ein Risiko in seine Treiber: Häufigkeit eines Ereignisses, Wahrscheinlichkeit eines Schadens und die Bandbreite der Folgekosten. Daraus entsteht eine Verteilung statt einer einzelnen Zahl — und eine Kurve, die zeigt, wie wahrscheinlich ein Verlust einer bestimmten Höhe pro Jahr ist.</p>
+<p class="body dim" style="max-width:50ch;margin-top:var(--space-4)">Damit lassen sich Maßnahmen gegen ihre Wirkung rechnen. In der laufenden Betreuung aktualisieren wir die Analyse jährlich, sodass Sie die Entwicklung sehen.</p>
+</div>
+<div class="rv" style="transition-delay:.1s">
+<div style="background:var(--color-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:calc(var(--space-6) * 1.2)">
+<div class="dim" style="display:flex;justify-content:space-between;gap:var(--space-6);font-size:11px;letter-spacing:.09em;text-transform:uppercase"><span>Wahrscheinlichkeit</span><span>Jahresverlust</span></div>
+<canvas id="koz-curve" aria-hidden="true" style="width:100%;height:clamp(200px,25vw,286px);margin-top:var(--space-2)"></canvas>
+<div style="height:1px;background:var(--rule-soft);margin:var(--space-4) 0"></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--space-4);flex-wrap:wrap">
+<span class="dim" style="font-size:11px;letter-spacing:.09em;text-transform:uppercase">Messpunkt</span>
+<span id="koz-readout" style="font-family:var(--font-heading);font-size:clamp(16px,1.6vw,19px);color:var(--color-accent-200);font-variant-numeric:tabular-nums">€ 1.250.000   ·   4,3 % p. a.</span>
+</div>
+</div>
+<p class="dim" style="font-size:13px;margin:var(--space-4) 0 0">Beispielkurve zur Veranschaulichung des Modells.</p>
+</div>
+</div>
+<div class="rule"></div>
+</section>
+
+<section id="umsetzung" data-screen-label="Umsetzung" class="sec">
+<div class="wrap">
+<p class="eyebrow rv" style="margin:0 0 var(--space-6)">Technische Umsetzungsprojekte</p>
+<h2 class="h-lg rv" style="max-width:24ch;transition-delay:.06s">Wir setzen die Analyse auch um</h2>
+<p class="body rv" style="max-width:54ch;margin-top:var(--space-8);transition-delay:.1s">Die Maßnahmenliste aus der Gap-Analyse bleibt nicht liegen. Wir arbeiten sie ab — Technik, Dokumentation und Schulung — und halten den Stand nach jeder Maßnahme nachvollziehbar fest. Setzt Ihr bestehender Dienstleister um, übernehmen wir die Steuerung und die Abnahme.</p>
+<div class="rv" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--space-6);margin-top:calc(var(--space-8) * 1.4);transition-delay:.14s">
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-network ico" aria-hidden="true" style="font-size:24px"></i><div class="h-md" style="font-size:17px">Technische Umsetzung</div><p class="body dim" style="font-size:15px;margin:0">Segmentierung, MFA, Sicherung und Protokollierung — inklusive Netzplan und Kopplungsmatrix.</p></div>
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-files ico" aria-hidden="true" style="font-size:24px"></i><div class="h-md" style="font-size:17px">Dokumentation</div><p class="body dim" style="font-size:15px;margin:0">Der Pflichtkern aus neun Konzepten inklusive Anlagen, oder einzelne Konzepte nach Bedarf.</p></div>
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-users-three ico" aria-hidden="true" style="font-size:24px"></i><div class="h-md" style="font-size:17px">Schulung</div><p class="body dim" style="font-size:15px;margin:0">Geschäftsführungsschulung nach § 38 und Erstschulung der Belegschaft.</p></div>
+<div class="panel" style="padding:calc(var(--space-8) * 1.1);display:flex;flex-direction:column;gap:var(--space-4)"><i class="ph ph-list-checks ico" aria-hidden="true" style="font-size:24px"></i><div class="h-md" style="font-size:17px">Steuerung</div><p class="body dim" style="font-size:15px;margin:0">Fremde Umsetzung nachhalten: Termine, Nachweise, Abnahme gegen die Maßnahmenliste.</p></div>
+</div>
+<h3 class="h-md rv" style="font-size:21px;margin:calc(var(--space-8) * 2) 0 0;transition-delay:.18s">VMware→Proxmox-Migration</h3>
+<div class="rv panel" style="margin-top:calc(var(--space-8) * 1.8);padding:calc(var(--space-6) * 1.2);transition-delay:.1s">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--space-6);align-items:stretch">
+<div style="background:var(--color-bg);border-radius:var(--radius-md);padding:calc(var(--space-6) * 1.15);display:flex;flex-direction:column;justify-content:center;gap:var(--space-2)"><div class="h-md" style="font-size:18px">VMware / ESXi</div><p class="dim" style="font-size:14px;margin:0;line-height:1.45">Bestandscluster, Lizenzkosten, gewachsene Strukturen</p></div>
+<div style="position:relative;min-height:150px"><canvas id="koz-flow" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%"></canvas></div>
+<div style="background:var(--color-bg);border-radius:var(--radius-md);padding:calc(var(--space-6) * 1.15);display:flex;flex-direction:column;justify-content:center;gap:var(--space-2);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--color-accent) 30%,transparent)"><div class="h-md" style="font-size:18px;color:var(--color-accent-200)">Proxmox VE</div><p class="dim" style="font-size:14px;margin:0;line-height:1.45">Cluster, Backup-Konzept, dokumentierter Betrieb</p></div>
+</div>
+</div>
+<div class="rv" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--space-8) clamp(28px,4vw,56px);margin-top:calc(var(--space-8) * 1.8);transition-delay:.14s">
+<div><div class="h-md" style="font-size:17px">Vorher: Inventar und Abhängigkeiten</div><p class="body dim" style="font-size:15px;margin-top:var(--space-3)">Aufnahme aller Maschinen, Netze und Schnittstellen. Reihenfolge und Wartungsfenster stehen vor dem ersten Umzug fest.</p></div>
+<div><div class="h-md" style="font-size:17px">Während: Umzug in Wellen</div><p class="body dim" style="font-size:15px;margin-top:var(--space-3)">Migration in kleinen Gruppen mit Rückfallebene. Jede Welle wird abgenommen, bevor die nächste beginnt.</p></div>
+<div><div class="h-md" style="font-size:17px">Danach: Managed-Betrieb</div><p class="body dim" style="font-size:15px;margin-top:var(--space-3)">Monitoring, Updates, Backup-Prüfung und der jährliche Wiederherstellungstest mit Protokoll.</p></div>
+</div>
+</div>
+</section>
+
+<section id="betreuung" data-screen-label="Betreuung" style="background:var(--color-surface)">
+<div class="rule"></div>
+<div class="wrap sec" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(32px,5vw,72px);align-items:center">
+<div class="rv" style="position:relative;aspect-ratio:1;max-width:350px;width:100%;justify-self:center"><canvas id="koz-radar" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%"></canvas></div>
+<div class="rv" style="transition-delay:.1s">
+<p class="eyebrow" style="margin:0 0 var(--space-6)">Laufende Betreuung</p>
+<h2 class="h-lg" style="max-width:20ch">Sicherheit ist ein Turnus, kein Projekt</h2>
+<p class="body" style="max-width:50ch;margin-top:var(--space-8)">Nach der Umsetzung übernehmen wir die Pflege: Maßnahmen nachhalten, Dokumentation aktuell halten, Änderungen bewerten, Datenschutzanfragen bearbeiten. Sie haben einen festen Ansprechpartner und einen Kalender, der die Nachweise rechtzeitig anstößt.</p>
+<p class="body dim" style="max-width:50ch;margin-top:var(--space-4)">Einmal im Jahr liegt der Wirksamkeitsbericht auf dem Tisch der Geschäftsführung — kurz, in Zahlen, mit klarer Empfehlung.</p>
+</div>
+</div>
+<div class="rule"></div>
+</section>
+
+<section id="leistungen" data-screen-label="Leistungen" class="sec">
+<div class="wrap">
+<p class="eyebrow rv" style="margin:0 0 var(--space-6)">Leistungsverzeichnis</p>
+<h2 class="h-lg rv" style="max-width:20ch;transition-delay:.06s">Was wir anbieten</h2>
+<div class="rv" style="margin-top:calc(var(--space-8) * 1.7);overflow-x:auto;transition-delay:.1s">
+<table class="table" style="min-width:560px">
+<thead><tr><th>Leistung</th><th style="width:210px">Abrechnung</th><th style="width:120px"></th></tr></thead>
+<tbody>
+<tr><td><span style="display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap"><span class="h-md" style="font-size:17px">Gap-Analyse mit Ampelbewertung</span><span class="tag tag-accent">Hauptprodukt</span></span></td><td class="dim">einmalig</td><td><a class="btn btn-ghost" href="gap-analyse.html">Details</a></td></tr>
+<tr><td>Cyber-Risiko-Quantifizierung nach FAIR</td><td class="dim">einmalig, jährlich aktualisiert</td><td><a class="btn btn-ghost" href="#fair">Details</a></td></tr>
+<tr><td><span style="display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap"><span class="h-md" style="font-size:17px">Umsetzung der Maßnahmenliste: Segmentierung, MFA, Sicherung, Protokollierung</span><span class="tag tag-accent">Umsetzung</span></span></td><td class="dim">einmalig, als Projekt</td><td><a class="btn btn-ghost" href="#umsetzung">Details</a></td></tr>
+<tr><td>Dokumentation Pflichtkern: neun Konzepte inklusive Anlagen</td><td class="dim">einmalig</td><td><a class="btn btn-ghost" href="#umsetzung">Details</a></td></tr>
+<tr><td>Steuerung der Maßnahmenliste, wenn ein anderer Dienstleister umsetzt</td><td class="dim">einmalig oder im Abo</td><td><a class="btn btn-ghost" href="#umsetzung">Details</a></td></tr>
+<tr><td>Schulungen: Geschäftsführung nach § 38 und Erstschulung der Belegschaft</td><td class="dim">einmalig</td><td><a class="btn btn-ghost" href="#umsetzung">Details</a></td></tr>
+<tr><td>VMware→Proxmox-Migration</td><td class="dim">einmalig, als Projekt</td><td><a class="btn btn-ghost" href="#umsetzung">Details</a></td></tr>
+<tr><td>VdS 10100 — laufende Betreuung</td><td class="dim">im Abo</td><td><a class="btn btn-ghost" href="#betreuung">Details</a></td></tr>
+<tr><td>Externer Informationssicherheitsbeauftragter</td><td class="dim">im Abo</td><td></td></tr>
+<tr><td>Externer Datenschutzbeauftragter</td><td class="dim">im Abo</td><td></td></tr>
+<tr><td>Managed-Betrieb nach Migration</td><td class="dim">im Abo</td><td></td></tr>
+<tr><td>Wiederherstellungstest mit Protokoll</td><td class="dim">jährlich, Teil der Betreuung</td><td></td></tr>
+<tr><td>Rechteüberprüfung, Firewall-Regelwerk und Netzplan</td><td class="dim">jährlich, Teil der Betreuung</td><td></td></tr>
+<tr><td>Wirksamkeitsbericht für die Geschäftsführung</td><td class="dim">jährlich, Teil der Betreuung</td><td></td></tr>
+<tr><td>Anwenderschulung vor Ort</td><td class="dim">jährlich, Teil der Betreuung</td><td></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+
+<section id="ueber" data-screen-label="Über uns" style="background:var(--color-surface)">
+<div class="rule"></div>
+<div class="wrap sec">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(32px,5vw,72px)">
+<div class="rv">
+<p class="eyebrow" style="margin:0 0 var(--space-6)">Über KOZ IT-Security</p>
+<h2 class="h-lg" style="max-width:18ch">Was Sie von uns nicht hören werden</h2>
+<p class="body dim" style="max-width:46ch;margin-top:var(--space-8)">Wir sind ein kleines Team aus Administration, Beratung und Datenschutz. Unsere Kunden sind mittelständische Unternehmen und Produktionsbetriebe, in denen IT den Betrieb tragen muss und ein Stillstand Geld kostet.</p>
+</div>
+<ul class="rowlist rv" style="transition-delay:.1s">
+<li style="align-items:flex-start"><i class="ph ph-x-circle ico" aria-hidden="true" style="padding-top:3px"></i><div><div class="h-md" style="font-size:17px">„Das brauchen Sie unbedingt.“</div><p class="body dim" style="font-size:15px;margin-top:var(--space-2)">Wir rechnen Ihnen vor, was eine Maßnahme bringt. Ist sie ihr Geld nicht wert, sagen wir das.</p></div></li>
+<li style="align-items:flex-start"><i class="ph ph-x-circle ico" aria-hidden="true" style="padding-top:3px"></i><div><div class="h-md" style="font-size:17px">„Das ist zu komplex zum Erklären.“</div><p class="body dim" style="font-size:15px;margin-top:var(--space-2)">Jeder Bericht ist so geschrieben, dass Sie ihn ohne uns lesen und weitergeben können.</p></div></li>
+<li style="align-items:flex-start"><i class="ph ph-x-circle ico" aria-hidden="true" style="padding-top:3px"></i><div><div class="h-md" style="font-size:17px">„Dafür brauchen wir erst ein Projekt.“</div><p class="body dim" style="font-size:15px;margin-top:var(--space-2)">Der Ersttermin kostet nichts und dauert 30 Minuten. Danach wissen Sie, ob sich mehr lohnt.</p></div></li>
+<li style="align-items:flex-start"><i class="ph ph-check-circle ico" aria-hidden="true" style="padding-top:3px"></i><div><div class="h-md" style="font-size:17px">Ein Ansprechpartner, der Ihre Umgebung kennt</div><p class="body dim" style="font-size:15px;margin-top:var(--space-2)">Vor Ort im Umkreis, remote bundesweit. Keine Provision auf Lizenzen.</p></div></li>
+</ul>
+</div>
+</div>
+<div class="rule"></div>
+</section>
+
+<section id="kontakt" data-screen-label="Kontakt" class="sec" style="position:relative;overflow:hidden">
+<div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(70% 80% at 85% 110%,color-mix(in srgb,var(--color-section-glow) 42%,transparent) 0%,transparent 62%)"></div>
+<div class="wrap" style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(32px,5vw,72px);align-items:start">
+<div class="rv">
+<p class="eyebrow" style="margin:0 0 var(--space-6)">Ersttermin</p>
+<h2 class="h-lg" style="max-width:16ch">30 Minuten, die Klarheit bringen</h2>
+<p class="body" style="max-width:46ch;margin-top:var(--space-8)">Im ersten Gespräch klären wir, wo Sie stehen und ob die Gap-Analyse der richtige Einstieg ist. Kostenfrei, telefonisch oder per Video — und ohne dass Sie etwas vorbereiten müssen.</p>
+<ul class="rowlist" style="margin-top:calc(var(--space-8) * 1.4)">
+<li><i class="ph ph-phone ico" aria-hidden="true"></i><a href="tel:+4915205941395" style="color:inherit;font-family:var(--font-heading);font-size:18px">+49 15205941395</a></li>
+<li><i class="ph ph-envelope-simple ico" aria-hidden="true"></i><a href="mailto:info@koz-itsecurity.com" style="color:inherit;font-family:var(--font-heading);font-size:18px">info@koz-itsecurity.com</a></li>
+<li><i class="ph ph-clock ico" aria-hidden="true"></i><span class="dim" style="font-size:15px">Mo–Fr, 08:00–18:00</span></li>
+</ul>
+</div>
+<form id="koz-form" class="rv panel" name="anfrage" method="post" data-netlify="true" netlify-honeypot="bot-feld" action="/" style="display:grid;gap:var(--space-6);padding:clamp(22px,2.6vw,34px);box-shadow:var(--shadow-md);transition-delay:.1s">
+<input type="hidden" name="form-name" value="anfrage">
+<p style="display:none"><label>Bitte nicht ausfüllen <input name="bot-feld"></label></p>
+<div class="field"><label for="koz-name">Name</label><input class="input" id="koz-name" name="name" required=""></div>
+<div class="field"><label for="koz-firma">Unternehmen</label><input class="input" id="koz-firma" name="firma"></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--space-6)">
+<div class="field"><label for="koz-mail">E-Mail</label><input class="input" id="koz-mail" name="email" type="email" required=""></div>
+<div class="field"><label for="koz-tel">Telefon</label><input class="input" id="koz-tel" name="telefon" type="tel"></div>
+</div>
+<div class="field"><label for="koz-nachricht">Worum geht es?</label><textarea class="input" id="koz-nachricht" name="nachricht" rows="4"></textarea></div>
+<button class="btn btn-primary btn-block" type="submit">Anfrage senden <i class="ph ph-arrow-right" aria-hidden="true" style="font-size:16px"></i></button>
+<p class="dim" style="font-size:13px;margin:0">Ihre Angaben verwenden wir nur zur Beantwortung der Anfrage. Details in der <a class="link" href="datenschutz.html">Datenschutzerklärung</a>.</p>
+<p id="koz-hinweis" aria-live="polite" style="font-size:14px;color:var(--color-accent-200);margin:0;min-height:1em"></p>
+</form>
+<div id="koz-danke" class="dialog-backdrop" hidden="" style="display:none;place-items:center;position:fixed;inset:0;z-index:100">
+<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="koz-danke-titel" style="max-width:380px;text-align:left">
+<i class="ph ph-check-circle" aria-hidden="true" style="font-size:30px;color:var(--color-accent);display:block;margin-bottom:var(--space-4)"></i>
+<h3 class="dialog-title" id="koz-danke-titel">E-Mail versendet</h3>
+<p class="dialog-body">Ihre Anfrage ist bei uns eingegangen. Wir melden uns innerhalb eines Werktags.</p>
+<div class="dialog-actions"><button class="btn btn-primary" type="button" data-koz-close="">Schließen</button></div>
+</div>
+</div>
+</div>
+</section>
+
+<footer>
+<div class="rule"></div>
+<div class="wrap" style="display:flex;gap:var(--space-6) calc(var(--space-8) * 1.4);flex-wrap:wrap;align-items:center;padding-top:calc(var(--space-8) * 1.6);padding-bottom:calc(var(--space-8) * 1.6)">
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MzMuODMgMTQ0LjAwIiB3aWR0aD0iNDM0IiBoZWlnaHQ9IjE0NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJLT1ogSVQtU2VjdXJpdHkiIHhtbG5zOmMycGE9Imh0dHA6Ly9jMnBhLm9yZy9tYW5pZmVzdCI+PHRpdGxlPktPWiBJVC1TZWN1cml0eTwvdGl0bGU+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTE0Ljc1MDAgLTYuNjY2Nykgc2NhbGUoMi40NTgzMykiPjxyZWN0IHg9IjYiIHk9IjgiIHdpZHRoPSI1MiIgaGVpZ2h0PSIxMSIgZmlsbD0iI0YzRjVGRSI+PC9yZWN0PjxwYXRoIGQ9Ik00MCAxOSBINTggTDI0IDQ1IEg2IFoiIGZpbGw9IiNCNUFCRkMiPjwvcGF0aD48cmVjdCB4PSI2IiB5PSI0NSIgd2lkdGg9IjUyIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjNGNUZFIj48L3JlY3Q+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE2Ny44MyAyKSI+PGcgZmlsbD0iI0YzRjVGRSI+PHBhdGggZD0iTTAgMCBIMjMgVjM0IEw1MiAwIEg3NiBMNDEgNTAgTDc2IDEwMCBINTAgTDIzIDY2IFYxMDAgSDAgWiI+PC9wYXRoPjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDg2IDApIiBkPSJNMCA1MCBBNDUgNTEuNSAwIDEgMCA5MCA1MCBBNDUgNTEuNSAwIDEgMCAwIDUwIFogTTIzIDUwIEEyMiAyOC41IDAgMSAxIDY3IDUwIEEyMiAyOC41IDAgMSAxIDIzIDUwIFoiIGZpbGwtcnVsZT0iZXZlbm9kZCI+PC9wYXRoPjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE5MCAwKSIgZD0iTTAgMCBINzYgVjIzIEwzMCA3NyBINzYgVjEwMCBIMCBWNzcgTDQ2IDIzIEgwIFoiPjwvcGF0aD48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE2Ny44MyAxNDQpIj48ZyBmaWxsPSIjQ0ZEM0U1Ij48cGF0aCBkPSJNNC42MDk3NTYwOTc1NjA5NzYgLTE2Ljk1MTIxOTUxMjE5NTEyNFYwLjBIMS44MjkyNjgyOTI2ODI5MjdWLTE2Ljk1MTIxOTUxMjE5NTEyNFoiPjwvcGF0aD48cGF0aCBkPSJNMzEuMDE3MDczMTcwNzMxNzA2IC0xNi45NTEyMTk1MTIxOTUxMjRWLTE0LjY4MjkyNjgyOTI2ODI5M0gyNi41MDQ4NzgwNDg3ODA0ODdWMC4wSDIzLjcyNDM5MDI0MzkwMjQzN1YtMTQuNjgyOTI2ODI5MjY4MjkzSDE5LjE4NzgwNDg3ODA0ODc4Vi0xNi45NTEyMTk1MTIxOTUxMjRaIj48L3BhdGg+PHBhdGggZD0iTTU1LjkzNjU4NTM2NTg1MzY2IC0xMC4wVi03LjY1ODUzNjU4NTM2NTg1NEg0NS45MTIxOTUxMjE5NTEyMlYtMTAuMFoiPjwvcGF0aD48cGF0aCBkPSJNNzEuMjcwNzMxNzA3MzE3MDggLTQuNjgyOTI2ODI5MjY4MjkzSDc0LjI0NjM0MTQ2MzQxNDY0UTc0LjM0MzkwMjQzOTAyNDM5IC0zLjU4NTM2NTg1MzY1ODUzNjcgNzUuMTEyMTk1MTIxOTUxMjMgLTIuODc4MDQ4NzgwNDg3ODA0OFE3NS44ODA0ODc4MDQ4NzgwNiAtMi4xNzA3MzE3MDczMTcwNzMzIDc3LjI3MDczMTcwNzMxNzA4IC0yLjE3MDczMTcwNzMxNzA3MzNRNzguNzA5NzU2MDk3NTYwOTggLTIuMTcwNzMxNzA3MzE3MDczMyA3OS41MTQ2MzQxNDYzNDE0OCAtMi44NjU4NTM2NTg1MzY1ODU3UTgwLjMxOTUxMjE5NTEyMTk2IC0zLjU2MDk3NTYwOTc1NjA5NzYgODAuMzE5NTEyMTk1MTIxOTYgLTQuNjU4NTM2NTg1MzY1ODU0UTgwLjMxOTUxMjE5NTEyMTk2IC01LjUxMjE5NTEyMTk1MTIyIDc5LjgxOTUxMjE5NTEyMTk2IC02LjA0ODc4MDQ4NzgwNDg3OFE3OS4zMTk1MTIxOTUxMjE5NiAtNi41ODUzNjU4NTM2NTg1MzcgNzguNTc1NjA5NzU2MDk3NTYgLTYuODc4MDQ4NzgwNDg3ODA2UTc3LjgzMTcwNzMxNzA3MzE3IC03LjE3MDczMTcwNzMxNzA3MyA3Ni41MTQ2MzQxNDYzNDE0NiAtNy41MTIxOTUxMjE5NTEyMlE3NC44NTYwOTc1NjA5NzU2MSAtNy45NTEyMTk1MTIxOTUxMjIgNzMuODE5NTEyMTk1MTIxOTQgLTguNDAyNDM5MDI0MzkwMjQ0UTcyLjc4MjkyNjgyOTI2ODI5IC04Ljg1MzY1ODUzNjU4NTM2NiA3Mi4wNTEyMTk1MTIxOTUxMyAtOS44MDQ4NzgwNDg3ODA0ODhRNzEuMzE5NTEyMTk1MTIxOTYgLTEwLjc1NjA5NzU2MDk3NTYxIDcxLjMxOTUxMjE5NTEyMTk2IC0xMi4zNDE0NjM0MTQ2MzQxNDdRNzEuMzE5NTEyMTk1MTIxOTYgLTEzLjgwNDg3ODA0ODc4MDQ4OCA3Mi4wNTEyMTk1MTIxOTUxMyAtMTQuOTAyNDM5MDI0MzkwMjQ0UTcyLjc4MjkyNjgyOTI2ODI5IC0xNi4wIDc0LjEgLTE2LjU4NTM2NTg1MzY1ODUzN1E3NS40MTcwNzMxNzA3MzE3MSAtMTcuMTcwNzMxNzA3MzE3MDc0IDc3LjE0ODc4MDQ4NzgwNDg4IC0xNy4xNzA3MzE3MDczMTcwNzRRNzkuNjEyMTk1MTIxOTUxMjIgLTE3LjE3MDczMTcwNzMxNzA3NCA4MS4xODUzNjU4NTM2NTg1NCAtMTUuOTM5MDI0MzkwMjQzOTAzUTgyLjc1ODUzNjU4NTM2NTg2IC0xNC43MDczMTcwNzMxNzA3MzEgODIuOTI5MjY4MjkyNjgyOTMgLTEyLjU2MDk3NTYwOTc1NjA5N0g3OS44NTYwOTc1NjA5NzU2MVE3OS43ODI5MjY4MjkyNjgyOSAtMTMuNDg3ODA0ODc4MDQ4NzgxIDc4Ljk3ODA0ODc4MDQ4NzggLTE0LjE0NjM0MTQ2MzQxNDYzNFE3OC4xNzMxNzA3MzE3MDczMiAtMTQuODA0ODc4MDQ4NzgwNDg4IDc2Ljg1NjA5NzU2MDk3NTYxIC0xNC44MDQ4NzgwNDg3ODA0ODhRNzUuNjYwOTc1NjA5NzU2MSAtMTQuODA0ODc4MDQ4NzgwNDg4IDc0LjkwNDg3ODA0ODc4MDQ5IC0xNC4xOTUxMjE5NTEyMTk1MTJRNzQuMTQ4NzgwNDg3ODA0ODggLTEzLjU4NTM2NTg1MzY1ODUzNyA3NC4xNDg3ODA0ODc4MDQ4OCAtMTIuNDM5MDI0MzkwMjQzOTAzUTc0LjE0ODc4MDQ4NzgwNDg4IC0xMS42NTg1MzY1ODUzNjU4NTMgNzQuNjI0MzkwMjQzOTAyNDQgLTExLjE1ODUzNjU4NTM2NTg1M1E3NS4xMDAwMDAwMDAwMDAwMSAtMTAuNjU4NTM2NTg1MzY1ODUzIDc1LjgzMTcwNzMxNzA3MzE4IC0xMC4zNjU4NTM2NTg1MzY1ODdRNzYuNTYzNDE0NjM0MTQ2MzQgLTEwLjA3MzE3MDczMTcwNzMxOCA3Ny44MzE3MDczMTcwNzMxNyAtOS43MzE3MDczMTcwNzMxNzFRNzkuNTE0NjM0MTQ2MzQxNDYgLTkuMjY4MjkyNjgyOTI2ODMgODAuNTc1NjA5NzU2MDk3NTYgLTguODA0ODc4MDQ4NzgwNDg4UTgxLjYzNjU4NTM2NTg1MzY2IC04LjM0MTQ2MzQxNDYzNDE0NyA4Mi4zODA0ODc4MDQ4NzgwNCAtNy4zNzgwNDg3ODA0ODc4MDZRODMuMTI0MzkwMjQzOTAyNDQgLTYuNDE0NjM0MTQ2MzQxNDY0IDgzLjEyNDM5MDI0MzkwMjQ0IC00LjgwNDg3ODA0ODc4MDQ4OFE4My4xMjQzOTAyNDM5MDI0NCAtMy41MTIxOTUxMjE5NTEyMTk1IDgyLjQyOTI2ODI5MjY4MjkzIC0yLjM2NTg1MzY1ODUzNjU4NTJRODEuNzM0MTQ2MzQxNDYzNDEgLTEuMjE5NTEyMTk1MTIxOTUxMiA4MC40MDQ4NzgwNDg3ODA0OSAtMC41MjQzOTAyNDM5MDI0MzlRNzkuMDc1NjA5NzU2MDk3NTYgMC4xNzA3MzE3MDczMTcwNzMxOCA3Ny4yNzA3MzE3MDczMTcwOCAwLjE3MDczMTcwNzMxNzA3MzE4UTc1LjU2MzQxNDYzNDE0NjM0IDAuMTcwNzMxNzA3MzE3MDczMTggNzQuMTk3NTYwOTc1NjA5NzUgLTAuNDI2ODI5MjY4MjkyNjgyOVE3Mi44MzE3MDczMTcwNzMxNyAtMS4wMjQzOTAyNDM5MDI0MzkgNzIuMDUxMjE5NTEyMTk1MTMgLTIuMTIxOTUxMjE5NTEyMTk1MlE3MS4yNzA3MzE3MDczMTcwOCAtMy4yMTk1MTIxOTUxMjE5NTE0IDcxLjI3MDczMTcwNzMxNzA4IC00LjY4MjkyNjgyOTI2ODI5M1oiPjwvcGF0aD48cGF0aCBkPSJNMTAwLjk5NTEyMTk1MTIxOTUyIC0xNC43MDczMTcwNzMxNzA3MzFWLTkuNzMxNzA3MzE3MDczMTcxSDEwNi44NDg3ODA0ODc4MDQ4OVYtNy40NjM0MTQ2MzQxNDYzNDJIMTAwLjk5NTEyMTk1MTIxOTUyVi0yLjI2ODI5MjY4MjkyNjgyOTVIMTA3LjU4MDQ4NzgwNDg3ODA2VjAuMEg5OC4yMTQ2MzQxNDYzNDE0N1YtMTYuOTc1NjA5NzU2MDk3NTYySDEwNy41ODA0ODc4MDQ4NzgwNlYtMTQuNzA3MzE3MDczMTcwNzMxWiI+PC9wYXRoPjxwYXRoIGQ9Ik0xMzAuNTI0MzkwMjQzOTAyNDUgLTE3LjE3MDczMTcwNzMxNzA3NFExMzMuMjMxNzA3MzE3MDczMiAtMTcuMTcwNzMxNzA3MzE3MDc0IDEzNS4zNDE0NjM0MTQ2MzQxOCAtMTUuODQxNDYzNDE0NjM0MTQ4UTEzNy40NTEyMTk1MTIxOTUxNCAtMTQuNTEyMTk1MTIxOTUxMjIgMTM4LjQwMjQzOTAyNDM5MDI1IC0xMi4wNzMxNzA3MzE3MDczMThIMTM1LjA2MDk3NTYwOTc1NjFRMTM0LjQwMjQzOTAyNDM5MDI1IC0xMy40MTQ2MzQxNDYzNDE0NjUgMTMzLjIzMTcwNzMxNzA3MzIgLTE0LjA3MzE3MDczMTcwNzMxOFExMzIuMDYwOTc1NjA5NzU2MSAtMTQuNzMxNzA3MzE3MDczMTcxIDEzMC41MjQzOTAyNDM5MDI0NSAtMTQuNzMxNzA3MzE3MDczMTcxUTEyOC44NDE0NjM0MTQ2MzQxNSAtMTQuNzMxNzA3MzE3MDczMTcxIDEyNy41MjQzOTAyNDM5MDI0NSAtMTMuOTc1NjA5NzU2MDk3NTYyUTEyNi4yMDczMTcwNzMxNzA3NCAtMTMuMjE5NTEyMTk1MTIxOTUyIDEyNS40NjM0MTQ2MzQxNDYzNSAtMTEuODA0ODc4MDQ4NzgwNDg4UTEyNC43MTk1MTIxOTUxMjE5NSAtMTAuMzkwMjQzOTAyNDM5MDI1IDEyNC43MTk1MTIxOTUxMjE5NSAtOC41MTIxOTUxMjE5NTEyMTlRMTI0LjcxOTUxMjE5NTEyMTk1IC02LjYzNDE0NjM0MTQ2MzQxNSAxMjUuNDYzNDE0NjM0MTQ2MzUgLTUuMjE5NTEyMTk1MTIxOTUxUTEyNi4yMDczMTcwNzMxNzA3NCAtMy44MDQ4NzgwNDg3ODA0ODggMTI3LjUyNDM5MDI0MzkwMjQ1IC0zLjAzNjU4NTM2NTg1MzY1OVExMjguODQxNDYzNDE0NjM0MTUgLTIuMjY4MjkyNjgyOTI2ODI5NSAxMzAuNTI0MzkwMjQzOTAyNDUgLTIuMjY4MjkyNjgyOTI2ODI5NVExMzIuMDYwOTc1NjA5NzU2MSAtMi4yNjgyOTI2ODI5MjY4Mjk1IDEzMy4yMzE3MDczMTcwNzMyIC0yLjkyNjgyOTI2ODI5MjY4M1ExMzQuNDAyNDM5MDI0MzkwMjUgLTMuNTg1MzY1ODUzNjU4NTM2NyAxMzUuMDYwOTc1NjA5NzU2MSAtNC45MjY4MjkyNjgyOTI2ODNIMTM4LjQwMjQzOTAyNDM5MDI1UTEzNy40NTEyMTk1MTIxOTUxNCAtMi40ODc4MDQ4NzgwNDg3ODA1IDEzNS4zNDE0NjM0MTQ2MzQxOCAtMS4xNzA3MzE3MDczMTcwNzNRMTMzLjIzMTcwNzMxNzA3MzIgMC4xNDYzNDE0NjM0MTQ2MzQxNyAxMzAuNTI0MzkwMjQzOTAyNDUgMC4xNDYzNDE0NjM0MTQ2MzQxN1ExMjguMTM0MTQ2MzQxNDYzNCAwLjE0NjM0MTQ2MzQxNDYzNDE3IDEyNi4xNTg1MzY1ODUzNjU4NSAtMC45NjM0MTQ2MzQxNDYzNDE0UTEyNC4xODI5MjY4MjkyNjgzIC0yLjA3MzE3MDczMTcwNzMxNyAxMjMuMDI0MzkwMjQzOTAyNDUgLTQuMDQ4NzgwNDg3ODA0ODc4UTEyMS44NjU4NTM2NTg1MzY2IC02LjAyNDM5MDI0MzkwMjQzOSAxMjEuODY1ODUzNjU4NTM2NiAtOC41MTIxOTUxMjE5NTEyMTlRMTIxLjg2NTg1MzY1ODUzNjYgLTExLjAgMTIzLjAyNDM5MDI0MzkwMjQ1IC0xMi45NzU2MDk3NTYwOTc1NjJRMTI0LjE4MjkyNjgyOTI2ODMgLTE0Ljk1MTIxOTUxMjE5NTEyMiAxMjYuMTcwNzMxNzA3MzE3MDcgLTE2LjA2MDk3NTYwOTc1NjFRMTI4LjE1ODUzNjU4NTM2NTg1IC0xNy4xNzA3MzE3MDczMTcwNzQgMTMwLjUyNDM5MDI0MzkwMjQ1IC0xNy4xNzA3MzE3MDczMTcwNzRaIj48L3BhdGg+PHBhdGggZD0iTTE1Ni4yMDAwMDAwMDAwMDAwMiAtMTYuOTUxMjE5NTEyMTk1MTI0Vi02LjE0NjM0MTQ2MzQxNDYzNFExNTYuMjAwMDAwMDAwMDAwMDIgLTQuMjE5NTEyMTk1MTIxOTUxIDE1Ny4yMTIxOTUxMjE5NTEyNSAtMy4yNDM5MDI0MzkwMjQzOTA1UTE1OC4yMjQzOTAyNDM5MDI0NiAtMi4yNjgyOTI2ODI5MjY4Mjk1IDE2MC4wMjkyNjgyOTI2ODI5MyAtMi4yNjgyOTI2ODI5MjY4Mjk1UTE2MS44NTg1MzY1ODUzNjU4NyAtMi4yNjgyOTI2ODI5MjY4Mjk1IDE2Mi44NzA3MzE3MDczMTcwOCAtMy4yNDM5MDI0MzkwMjQzOTA1UTE2My44ODI5MjY4MjkyNjgzIC00LjIxOTUxMjE5NTEyMTk1MSAxNjMuODgyOTI2ODI5MjY4MyAtNi4xNDYzNDE0NjM0MTQ2MzRWLTE2Ljk1MTIxOTUxMjE5NTEyNEgxNjYuNjYzNDE0NjM0MTQ2MzZWLTYuMTk1MTIxOTUxMjE5NTEyUTE2Ni42NjM0MTQ2MzQxNDYzNiAtNC4xMjE5NTEyMTk1MTIxOTUgMTY1Ljc2MDk3NTYwOTc1NjEyIC0yLjY4MjkyNjgyOTI2ODI5M1ExNjQuODU4NTM2NTg1MzY1ODcgLTEuMjQzOTAyNDM5MDI0MzkwMiAxNjMuMzQ2MzQxNDYzNDE0NjYgLTAuNTM2NTg1MzY1ODUzNjU4NlExNjEuODM0MTQ2MzQxNDYzNDIgMC4xNzA3MzE3MDczMTcwNzMxOCAxNjAuMDA0ODc4MDQ4NzgwNDggMC4xNzA3MzE3MDczMTcwNzMxOFExNTguMTc1NjA5NzU2MDk3NTcgMC4xNzA3MzE3MDczMTcwNzMxOCAxNTYuNjc1NjA5NzU2MDk3NTcgLTAuNTM2NTg1MzY1ODUzNjU4NlExNTUuMTc1NjA5NzU2MDk3NTcgLTEuMjQzOTAyNDM5MDI0MzkwMiAxNTQuMjk3NTYwOTc1NjA5NzcgLTIuNjgyOTI2ODI5MjY4MjkzUTE1My40MTk1MTIxOTUxMjE5NyAtNC4xMjE5NTEyMTk1MTIxOTUgMTUzLjQxOTUxMjE5NTEyMTk3IC02LjE5NTEyMTk1MTIxOTUxMlYtMTYuOTUxMjE5NTEyMTk1MTI0WiI+PC9wYXRoPjxwYXRoIGQ9Ik0xOTAuODc1NjA5NzU2MDk3NTYgMC4wIDE4Ni45NzMxNzA3MzE3MDczIC02Ljc4MDQ4NzgwNDg3ODA0OUgxODQuODUxMjE5NTEyMTk1MTRWMC4wSDE4Mi4wNzA3MzE3MDczMTcxVi0xNi45NTEyMTk1MTIxOTUxMjRIMTg3LjkyNDM5MDI0MzkwMjQ1UTE4OS44NzU2MDk3NTYwOTc1NiAtMTYuOTUxMjE5NTEyMTk1MTI0IDE5MS4yMjkyNjgyOTI2ODI5NSAtMTYuMjY4MjkyNjgyOTI2ODNRMTkyLjU4MjkyNjgyOTI2ODMgLTE1LjU4NTM2NTg1MzY1ODUzNyAxOTMuMjUzNjU4NTM2NTg1MzYgLTE0LjQzOTAyNDM5MDI0MzkwM1ExOTMuOTI0MzkwMjQzOTAyNDUgLTEzLjI5MjY4MjkyNjgyOTI2OSAxOTMuOTI0MzkwMjQzOTAyNDUgLTExLjg3ODA0ODc4MDQ4NzgwNlExOTMuOTI0MzkwMjQzOTAyNDUgLTEwLjIxOTUxMjE5NTEyMTk1MiAxOTIuOTYwOTc1NjA5NzU2MSAtOC44NjU4NTM2NTg1MzY1ODdRMTkxLjk5NzU2MDk3NTYwOTc2IC03LjUxMjE5NTEyMTk1MTIyIDE4OS45OTc1NjA5NzU2MDk3NiAtNy4wMjQzOTAyNDM5MDI0MzlMMTk0LjE5MjY4MjkyNjgyOTI2IDAuMFpNMTg0Ljg1MTIxOTUxMjE5NTE0IC05LjBIMTg3LjkyNDM5MDI0MzkwMjQ1UTE4OS40ODUzNjU4NTM2NTg1NSAtOS4wIDE5MC4yNzgwNDg3ODA0ODc4NCAtOS43ODA0ODc4MDQ4NzgwNVExOTEuMDcwNzMxNzA3MzE3MSAtMTAuNTYwOTc1NjA5NzU2MDk3IDE5MS4wNzA3MzE3MDczMTcxIC0xMS44NzgwNDg3ODA0ODc4MDZRMTkxLjA3MDczMTcwNzMxNzEgLTEzLjE5NTEyMTk1MTIxOTUxMiAxOTAuMjkwMjQzOTAyNDM5MDQgLTEzLjkzOTAyNDM5MDI0MzkwM1ExODkuNTA5NzU2MDk3NTYxIC0xNC42ODI5MjY4MjkyNjgyOTMgMTg3LjkyNDM5MDI0MzkwMjQ1IC0xNC42ODI5MjY4MjkyNjgyOTNIMTg0Ljg1MTIxOTUxMjE5NTE0WiI+PC9wYXRoPjxwYXRoIGQ9Ik0yMTIuMDYzNDE0NjM0MTQ2MzcgLTE2Ljk1MTIxOTUxMjE5NTEyNFYwLjBIMjA5LjI4MjkyNjgyOTI2ODMyVi0xNi45NTEyMTk1MTIxOTUxMjRaIj48L3BhdGg+PHBhdGggZD0iTTIzOC40NzA3MzE3MDczMTcwNyAtMTYuOTUxMjE5NTEyMTk1MTI0Vi0xNC42ODI5MjY4MjkyNjgyOTNIMjMzLjk1ODUzNjU4NTM2NTg2VjAuMEgyMzEuMTc4MDQ4NzgwNDg3OFYtMTQuNjgyOTI2ODI5MjY4MjkzSDIyNi42NDE0NjM0MTQ2MzQxM1YtMTYuOTUxMjE5NTEyMTk1MTI0WiI+PC9wYXRoPjxwYXRoIGQ9Ik0yNjUuNjM0MTQ2MzQxNDYzNCAtMTYuOTUxMjE5NTEyMTk1MTI0IDI2MC4wMjQzOTAyNDM5MDI0IC02LjE0NjM0MTQ2MzQxNDYzNFYwLjBIMjU3LjI0MzkwMjQzOTAyNDRWLTYuMTQ2MzQxNDYzNDE0NjM0TDI1MS42MDk3NTYwOTc1NjEgLTE2Ljk1MTIxOTUxMjE5NTEyNEgyNTQuNzA3MzE3MDczMTcwNzRMMjU4LjYzNDE0NjM0MTQ2MzQgLTguNjM0MTQ2MzQxNDYzNDE1TDI2Mi41NjA5NzU2MDk3NTYxIC0xNi45NTEyMTk1MTIxOTUxMjRaIj48L3BhdGg+PC9nPjwvZz48L3N2Zz4=" alt="KOZ IT-Security" style="height:34px;width:auto;margin-right:auto">
+<a class="navlink" href="gap-analyse.html">Gap-Analyse</a>
+<a class="navlink" href="impressum.html">Impressum</a>
+<a class="navlink" href="datenschutz.html">Datenschutz</a>
+<span class="dim" style="font-size:13.5px">© 2026 KOZ IT-Security</span>
+</div>
+</footer>
+
+</div>
+</body>
+</html>
